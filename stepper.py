@@ -8,23 +8,49 @@ import time
 import sys
 
 class Stepper(object):
-	def __init__(self):
-		self.pcm = alsaaudio.PCM(alsaaudio.PCM_PLAYBACK, alsaaudio.PCM_NORMAL)
-		self.pcm.setchannels(2)
-		self.pcm.setrate(48000)
-		self.pcm.setformat(alsaaudio.PCM_FORMAT_U8)
-		self.pcm.setperiodsize(1024)
-		amp = 120.0
-		self.sintab = [128.0 + amp * sin((x * 2 * pi) / 1024.0) for x in range(1024)]
-		self.costab = [128.0 + amp * cos((x * 2 * pi) / 1024.0) for x in range(1024)]
-		self.sinsqtab = [128.0 + amp] * 512 + [128.0 - amp] * 512
-		self.cossqtab = [128.0 + amp] * 256 + [128.0 - amp] * 512 + [128.0 + amp] * 256
+	MICROSTEPS = 16
+	def __init__(self, samplerate, periodsize, amplitude):
+		self.periodsize = periodsize
+		self.samplerate = samplerate
+		self.amplitude = float(amplitude)
+		steps = 4 * self.MICROSTEPS
+		fsteps = float(steps)
+		self.maxsteps = steps
+		self.sintab = [128.0 + amplitude * sin((x * 2 * pi) / fsteps) for x in range(steps)]
+		self.costab = [128.0 + amplitude * cos((x * 2 * pi) / fsteps) for x in range(steps)]
+		self.sinsqtab = [128.0 + amplitude] * (steps // 2)
+		self.sinsqtab += [128.0 - amplitude] * (steps // 2)
+		self.cossqtab = [128.0 + amplitude] * (steps // 4)
+		self.cossqtab += [128.0 - amplitude] * (steps // 2)
+		self.cossqtab += [128.0 + amplitude] * (steps // 4)
+		self.angle = 0.0
+		self.speed = 0.0
+		self.ccw = True
 
-	def getsin(self, x):
-		return self.sintab[int(x) % 1024]
+	def next_sample(self):
+		if self.ccw:
+			sint = self.sintab
+			cost = self.costab
+			sinst = self.sinsqtab
+			cosst = self.cossqtab
+		else:
+			cost = self.sintab
+			sint = self.costab
+			cosst = self.sinsqtab
+			sinst = self.cossqtab
+		idx = int(self.angle)
+		f1 = self.xf1
+		f2 = self.xf2
+		vl = f1 * sint[idx] + f2 * sinst[idx]
+		vr = f1 * cost[idx] + f2 * cosst[idx]
+		self.angle += self.speed
+		if self.angle > self.maxsteps:
+			self.angle -= float(self.maxsteps)
+		return vl, vr
 
-	def getcos(self, x):
-		return self.costab[int(x) % 1024]
+	def set_speed(self, speed):
+		self.speed = speed
+		self.xf1, self.xf2 = self._xfade(speed)
 
 	def _xfade(self, speed):
 		if speed < 2.0:
@@ -74,6 +100,34 @@ class Stepper(object):
 			c = data[-1]
 			data += c * (1024-len(data))
 		self.pcm.write(data)
+
+class StepperCluster(object):
+	SAMPLERATE = 48000
+	PERIODSIZE = 1024
+	def __init__(self, soundcard, channels):
+		self.pcm = alsaaudio.PCM(alsaaudio.PCM_PLAYBACK, alsaaudio.PCM_NORMAL, soundcard)
+		self.pcm.setchannels(channels * 2)
+		self.pcm.setrate(self.SAMPLERATE)
+		self.pcm.setformat(alsaaudio.PCM_FORMAT_U8)
+		self.pcm.setperiodsize(self.PERIODSIZE)
+		self.motors = [Stepper(self.SAMPLERATE, self.PERIODSIZE, 120.0) for x in range(channels)]
+
+	def set_home(self):
+		self.position = [0.0 for x in range(channels)]
+
+	def set_speed(self, *speed):
+		assert(len(speed) <= len(self.motors))
+		for i in range(len(self.motors)):
+			self.motors[i].set_speed(speed[i])
+
+	def next_sample(self):
+		ret = []
+		for m in self.motors:
+			ret.extend(m.next_sample())
+		return ret
+
+	def _write_fsamples(self, s):
+		self.pcm.write("".join(map(lambda x: chr(int(x)), s)))
 
 if __name__ == "__main__":
 	maxspeed = 5.0
