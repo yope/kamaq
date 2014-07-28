@@ -26,19 +26,23 @@ class Stepper(object):
 		self.cossqtab = [offset + amplitude] * (steps // 4)
 		self.cossqtab += [offset - amplitude] * (steps // 2)
 		self.cossqtab += [offset + amplitude] * (steps // 4)
-		self.angle = 0.0
+		self.angle = 0
 		self.speed = 0.0
 		self.offset = offset
 		self.ccw = True
 		self.set_speed(0)
 
 	def do_step(self, direction):
+		sint = self.sintab
+		cost = self.costab
+		sinst = self.sinsqtab
+		cosst = self.cossqtab
 		idx = self.angle
 		idx += direction
-		if idx >= self.steps:
-			idx -= self.steps
+		if idx >= self.maxsteps:
+			idx -= self.maxsteps
 		elif idx < 0:
-			idx += self.steps
+			idx += self.maxsteps
 		f1 = self.xf1
 		f2 = self.xf2
 		vl = f1 * sint[idx] + f2 * sinst[idx]
@@ -68,16 +72,15 @@ class Stepper(object):
 			self.angle -= float(self.maxsteps)
 		return vl, vr
 
-	# FIXME: Deprecated
 	def set_speed(self, speed):
 		self.speed = speed
 		self.xf1, self.xf2 = self._xfade(speed)
 
 	def _xfade(self, speed):
-		if speed < 2.0:
+		if speed < 0.3:
 			return 1.0, 0.0
-		elif speed < 4.0:
-			d = (speed - 2.0) / 2.0
+		elif speed < 0.6:
+			d = (speed - 0.3) / 0.3
 			return 1.0 - d, d
 		else:
 			return 0.0, 1.0
@@ -85,7 +88,7 @@ class Stepper(object):
 class StepperCluster(object):
 	SAMPLERATE = 44100
 	PERIODSIZE = 1024
-	def __init__(self, soundcard, channels):
+	def __init__(self, soundcard, channels, poscb):
 		cards = alsaaudio.cards()
 		if not soundcard in cards:
 			print "Error: did not find soundcard named:", soundcard
@@ -102,6 +105,10 @@ class StepperCluster(object):
 		self.set_home()
 		self.set_destination(self.position)
 		self.max_speeds = [5.0 for x in range(self.dim)]
+		self.get_pos_cb = poscb
+		self.currents = [0.0 for x in range(self.dim * 2)]
+		self.data = ""
+		self.chompsize = self.PERIODSIZE * self.dim * 4
 
 	def set_home(self):
 		self.position = [0.0 for x in range(self.dim)]
@@ -144,6 +151,9 @@ class StepperCluster(object):
 		return steps
 
 	def pos_iteration(self):
+		spd = self._vec_mul_scalar(self.incvec, self.delta_t)
+		print "Speeds:", repr(spd)
+		self.set_speed(*spd)
 		ret = self.next_position(self.delta_t)
 		dtinc = 0.1
 		dt = self.dist - self.time
@@ -153,11 +163,32 @@ class StepperCluster(object):
 			self.delta_t += dtinc
 		return ret
 
-	# FIXME: Deprecated
 	def set_speed(self, *speed):
-		assert(len(speed) <= len(self.motors))
-		for i in range(len(self.motors)):
-			self.motors[i].set_speed(speed[i])
+		# assert(len(speed) <= len(self.motors))
+		for i in range(self.dim):
+			self.motors[i].set_speed(abs(speed[i]))
+
+	def main_iteration(self):
+		if self.time >= self.dist:
+			dst = self.get_pos_cb()
+			print "New destination:", repr(dst)
+			self.set_destination(*dst)
+		steps = self.pos_iteration()
+		for i in range(self.dim):
+			s = steps[i]
+			if s:
+				vl, vr = self.motors[i].do_step(s)
+				self.currents[i * 2] = vl
+				self.currents[i * 2 + 1] = vr
+		data = self.packer.pack(*self.currents)
+		self.data += data
+		if len(self.data) >= self.chompsize:
+			n = self.pcm.write(self.data[:self.chompsize])
+			self.data = self.data[n:]
+
+	def main_loop(self):
+		while True:
+			self.main_iteration()
 
 def main_test_dc():
 	c = StepperCluster('Device', 4)
@@ -176,22 +207,20 @@ def main_test_dc():
 		print "Sample rate:", c.PERIODSIZE/ti
 	c.pcm.close()
 
+idx = 0
+points = [[10, 8, 5, 2], [-1, -10, 5, 2], [-1, 2, 3, 4], [0, 0, 0, 0]]
+def position_cb():
+	global idx
+	global points
+	ret = points[idx]
+	idx += 1
+	if idx >= len(points):
+		idx = 0
+	return ret
+
 def main_test_pos():
-	c = StepperCluster('Device', 4)
-	c.set_destination(10, 8, 5, 2)
-	print repr(c.incvec)
-	t = 0
-	while c.time < c.dist and t < 100:
-		s = c.pos_iteration()
-		print "Position:", c.position, "Steps:", s, "speed:", c.delta_t
-		t += 1
-	c.set_destination(-1, -10, 5, 2)
-	print repr(c.incvec)
-	t = 0
-	while c.time < c.dist and t < 100:
-		s = c.pos_iteration()
-		print "Position:", c.position, "Steps:", s, "speed:", c.delta_t
-		t += 1
+	c = StepperCluster('Device', 4, position_cb)
+	c.main_loop()
 
 if __name__ == "__main__":
 	main_test_pos()
