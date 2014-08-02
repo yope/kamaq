@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <alsa/asoundlib.h>
 #include <math.h>
-#include "audiostep.h"
+#include "audiodev.h"
 
 #define PERIODSIZE 1024
 
