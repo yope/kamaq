@@ -3,9 +3,10 @@
 #include <stdint.h>
 #include <alsa/asoundlib.h>
 #include <math.h>
+#include <string.h>
 #include "audiodev.h"
 
-#define PERIODSIZE 1024
+#define PERIODSIZE 128
 
 #define MICROSTEPS 16
 #define STEP_PERIOD_SIZE (4 * MICROSTEPS)
@@ -24,6 +25,7 @@ unsigned int buf_idx = 0;
 static double tim;
 static double dist;
 static double delta_t;
+static double feedrate = 0.33;
 
 double sintab[STEP_PERIOD_SIZE], costab[STEP_PERIOD_SIZE];
 int angle[MAX_DIM];
@@ -89,14 +91,14 @@ static double vec_dist(double *v1, double *v2)
 	return sqrt(sqd);
 }
 
-int audiostep_open(const char *devname, int channels)
+int audiostep_open(const char *devname, int channels, unsigned int rate)
 {
 	int err;
 	snd_pcm_hw_params_t *hw_params;
-	unsigned int rate = 48000;
 	int dir = 0;
 	int i;
 	snd_pcm_uframes_t periods = PERIODSIZE;
+	snd_pcm_uframes_t bufsize = PERIODSIZE * 4;
 
 	dim = channels;
 
@@ -132,6 +134,11 @@ int audiostep_open(const char *devname, int channels)
 
 	if ((err = snd_pcm_hw_params_set_channels (playback_handle, hw_params, 2 * channels)) < 0) {
 		fprintf(stderr, "cannot set channel count (%s)\n", snd_strerror (err));
+		goto out_free;
+	}
+
+	if ((err = snd_pcm_hw_params_set_buffer_size_near(playback_handle, hw_params, &bufsize)) < 0) {
+		fprintf(stderr, "cannot set buffer size (%s)\n", snd_strerror (err));
 		goto out_free;
 	}
 
@@ -193,7 +200,7 @@ void set_destination(double *v)
 	vec_copy(origin, position);
 	vec_copy(destination, v);
 	tim = 0.0;
-	delta_t = 1.0;
+	delta_t = 0.05;
 	dist = vec_dist(position, v);
 	if(dist == 0.0) {
 		vec_clear(incvec);
@@ -223,14 +230,14 @@ void next_position(int *steps)
 
 void pos_iteration(int *steps)
 {
-	double dtinc = 0.01;
+	double dtinc = 0.0005;
 	double dt;
 
 	next_position(steps);
 	dt = dist - tim;
-	if ((((delta_t - 1.0) / dtinc) >= dt) && (delta_t > 1.0))
+	if ((((delta_t - 0.05) / dtinc) >= dt) && (delta_t > 0.05))
 		delta_t -= dtinc;
-	else if (delta_t < (5.0 - dtinc))
+	else if (delta_t < (feedrate - dtinc))
 		delta_t += dtinc;
 }
 
@@ -244,6 +251,7 @@ static int write_current_reps(double *c, int reps)
 	int i, t;
 	int err;
 
+	//printf("write_current_reps reps = %d, delta_t = %lf\n", reps, delta_t);
 	for(t = 0; t < reps; t++) {
 		for(i = 0; i < (dim * 2); i++) {
 			buf[buf_idx + i] = (int16_t)c[i];
@@ -254,7 +262,7 @@ static int write_current_reps(double *c, int reps)
 				fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
 				return err;
 			}
-			// printf("Wrote %d periods\n", err);
+			//printf("Wrote %d periods\n", err);
 			buf_idx = 0;
 		}
 	}
@@ -295,7 +303,7 @@ int main_iteration(void)
 			motor_do_steps(i, steps[i], &currents[i * 2], &currents[i * 2 + 1]);
 		}
 	}
-	reps = (int)(15.0 / delta_t);
+	reps = (int)(1.0 / delta_t);
 	write_current_reps(currents, reps);
 	return 1;
 }
@@ -308,3 +316,27 @@ void process_one_move(void)
 	}
 }
 
+void zero_output(void)
+{
+	int i, err;
+
+	memset(buf, 0, sizeof(buf));
+	for(i = 0; i < 4; i ++) {
+		if ((err = snd_pcm_writei(playback_handle, buf, PERIODSIZE)) != PERIODSIZE) {
+			fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
+			return;
+		}
+	}
+	buf_idx = 0;
+}
+
+void close_audio(void)
+{
+	snd_pcm_drain(playback_handle);
+	snd_pcm_close(playback_handle);
+}
+
+void set_feedrate(double rate)
+{
+	feedrate = rate;
+}
