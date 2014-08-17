@@ -12,8 +12,9 @@ class Config(object):
 			"num_motors" : 4,
 			"motor_name" : ['X', 'Y', 'Z', 'E'],
 			"max_speed" : [200, 200, 200, 200],
-			"steps_per_mm" : [10, 10, 160, 10],
+			"steps_per_mm" : [80, 80, 2560, 80],
 			"sound_device" : "Device",
+			"sound_rate" : 48000,
 		}
 		self.config = ConfigParser.SafeConfigParser(defaults)
 		self.config.read([cfgfilename])
