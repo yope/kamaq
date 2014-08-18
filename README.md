@@ -34,7 +34,8 @@ will be enough for controlling 4 stepper-motors.
 -------------------
 
 Of course the main goal for this project is controlling 3D-printer hardware,
-such as the RepRap Prusa i3 for example.
+such as the RepRap Prusa i3 for example, but it may very well be suited for
+other applications.
 
 5. Required hardware
 --------------------
@@ -80,5 +81,5 @@ HW-mon drivers, such as the ADS1015 from TI, which has mainline-linux support.
 I have implemented all the needed hardware to control a 3D printer using this
 software in very little time and effort. If there is enough interest I might
 open-source the hardware (Kicad schematics and layout) too, but it is really
-simple and straght-forward stuff right now hacked together in very little time.
+simple and straight-forward stuff right now hacked together in very little time.
 
