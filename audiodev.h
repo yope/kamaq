@@ -10,5 +10,6 @@ void process_one_move(void);
 void zero_output(void);
 void close_audio(void);
 void set_feedrate(double rate);
+void set_constant_level(double *c);
 
 #endif

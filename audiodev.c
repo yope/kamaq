@@ -338,6 +338,11 @@ void zero_output(void)
 	buf_idx = 0;
 }
 
+void set_constant_level(double *c)
+{
+	write_current_reps(c, 100);
+}
+
 void close_audio(void)
 {
 	snd_pcm_drain(playback_handle);

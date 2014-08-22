@@ -21,15 +21,18 @@ cdef extern from "audiodev.h":
 	void zero_output()
 	void close_audio()
 	void set_feedrate(double rate)
+	void set_constant_level(double *c)
 
 cdef class audiostep:
 	cdef int handle
 	cdef double *pos
+	cdef double *current
 	def __init__(self, name, channels=4):
 		cdef int ret
 		pcmname = "surround71:CARD=" + name + ",DEV=0"
 		ret = audiostep_open(pcmname, channels, 48000)
-		self.pos = <double *>malloc(MAX_DIM*cython.sizeof(double))
+		self.pos = <double *>malloc(MAX_DIM * cython.sizeof(double))
+		self.current = <double *>malloc(MAX_DIM * 2 * cython.sizeof(double))
 		if self.pos is NULL:
 			raise MemoryError()
 
@@ -54,3 +57,8 @@ cdef class audiostep:
 	def set_feedrate(self, rate):
 		set_feedrate(rate)
 
+	def set_constant_current(self, c):
+		cdef int i
+		for i in range(MAX_DIM * 2):
+			self.current[i] = c[i]
+		set_constant_level(self.current)
