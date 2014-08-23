@@ -25,16 +25,25 @@ class StepperCluster(object):
 		cmd = obj[0]
 		pos = obj[1]
 		if cmd == "feedrate":
-			rate = pos / 600.0
+			rate = pos
 			#print "Feedrate:", pos, "rate =", rate
-			self.audio.set_feedrate(rate)
+			self.set_feedrate(rate)
 		elif cmd == "position":
 			#print "Position:", repr(pos)
-			self.audio.set_destination(pos)
+			self.set_destination(pos)
 		else:
 			print "SC: Unknown object:", repr(obj)
-		self.audio.process_one_move()
+		self.process_one_move()
 		return True
+
+	def set_feedrate(self, rate):
+		self.audio.set_feedrate(rate / 600.0)
+
+	def set_destination(self, pos):
+		self.audio.set_destination(pos)
+
+	def process_one_move(self):
+		self.audio.process_one_move()
 
 	def zero_output(self):
 		self.audio.zero_output()

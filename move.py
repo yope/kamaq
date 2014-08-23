@@ -24,6 +24,10 @@ class Move(object):
 			self.motor_name_indexes[self.motor_name[i]] = i
 		#self.plist = [[100, 80, 50, 20], [-10, -100, 50, 20], [-10, 20, 30, 40], [0, 0, 0, 0]]
 		self.gcode = gcode
+		if gcode is not None:
+			self.start()
+
+	def start(self):
 		self.movements = self.movement_generator()
 
 	def transform(self, gpos):
@@ -59,7 +63,7 @@ if __name__ == "__main__":
 	from config import Config
 	from stepper import StepperCluster
 
-	cfg = Config("bla.cfg")
+	cfg = Config("grunner.conf")
 	gname = "enchufe.gcode"
 	if len(sys.argv) > 1:
 		gname = sys.argv[1]
