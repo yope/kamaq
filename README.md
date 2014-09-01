@@ -40,8 +40,8 @@ other applications.
 5. Required hardware
 --------------------
 
-5.1 Audio device
-----------------
+5.1. Audio device
+-----------------
 
 The sound-card will work better if modified slightly, by shorting the DC-
 blocking capacitors at the output. On many USB audio devices this is a
@@ -52,8 +52,8 @@ implementations of popular 7.1 USB audio devices that use this chip.
 Most of the time they will use cheap through-hole electrolytic capacitors,
 that are very easy to short out.
 
-5.2 Current amplifiers
-----------------------
+5.2. Current amplifiers
+-----------------------
 
 Bipolar 2-phase stepper-motors are best driven by a controlled current.
 Although in theory, having a good model of the motor that takes into account
@@ -66,8 +66,8 @@ feedback based on a bunch of TDA2030A I had laying around, so I have not
 included support for motor-modelling of any kind in order to support voltage-
 amplifiers. If you think this is a cool idea, feel free to contribute ;-)
 
-5.3 Heater control
-------------------
+5.3. Heater control
+-------------------
 
 To control heater elements (such as for the extruder or the heated-bed of a
 3D-printer), simple low-side switches with power-MOSFETS with very low-Rdson
@@ -75,11 +75,25 @@ will be perfect.
 Temperature feedback is best implemented via simple A/D converters that support
 HW-mon drivers, such as the ADS1015 from TI, which has mainline-linux support.
 
-5.4 Hardware implementation
----------------------------
+5.4. Hardware implementation
+----------------------------
 
 I have implemented all the needed hardware to control a 3D printer using this
 software in very little time and effort. If there is enough interest I might
 open-source the hardware (Kicad schematics and layout) too, but it is really
 simple and straight-forward stuff right now hacked together in very little time.
+
+6. Tools
+--------
+
+ * grunner.py: This command-line tool can execude whole G-Code files or single
+   movements by specifying relative distance on each axis (including extruder)
+   on the command-line.
+
+ * set_current.py: Very simple tool that sets constant motor currents for all
+   motors specified on the command-line. Can be used for adjusting motor
+   current via the audio mixer. For each motor, two values are specified from
+   -30000 to 30000, corresponding to the currents through each of the two
+   coils. If less than 8 values (for 4 motors) are specified, the rest is
+   assumed to be 0.
 
