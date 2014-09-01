@@ -54,6 +54,9 @@ class StepperCluster(object):
 	def fileno(self):
 		self.audio.fileno()
 
+	def write_more(self):
+		self.audio.write_more()
+
 	def main_loop(self):
 		while True:
 			if not self.main_iteration():

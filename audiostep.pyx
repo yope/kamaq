@@ -23,6 +23,7 @@ cdef extern from "audiodev.h":
 	void set_feedrate(double rate)
 	void set_constant_level(double *c)
 	int audio_fileno()
+	int push_more_audio_data()
 
 cdef class audiostep:
 	cdef int handle
@@ -45,6 +46,12 @@ cdef class audiostep:
 
 	def main_iteration(self):
 		return main_iteration()
+
+	def write_more(self):
+		cdef int ret
+		ret = push_more_audio_data();
+		if ret < -1:
+			raise IOError
 
 	def process_one_move(self):
 		process_one_move()

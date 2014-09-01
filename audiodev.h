@@ -12,5 +12,6 @@ void close_audio(void);
 void set_feedrate(double rate);
 void set_constant_level(double *c);
 int audio_fileno(void);
+int push_more_audio_data(void);
 
 #endif

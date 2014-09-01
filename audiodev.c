@@ -258,7 +258,7 @@ void set_speed(double *speed)
 static int write_current_reps(double *c, int reps)
 {
 	int i, t;
-	int err;
+	int ret = 0, err;
 
 	//printf("write_current_reps reps = %d, delta_t = %lf\n", reps, delta_t);
 	for(t = 0; t < reps; t++) {
@@ -271,11 +271,12 @@ static int write_current_reps(double *c, int reps)
 				fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
 				return err;
 			}
+			ret += err;
 			//printf("Wrote %d periods\n", err);
 			buf_idx = 0;
 		}
 	}
-	return 0;
+	return ret;
 }
 
 static void motor_do_steps(int i, int s, double *vl, double *vr)
@@ -292,20 +293,21 @@ static void motor_do_steps(int i, int s, double *vl, double *vr)
 	*vr = costab[angle[i]];
 }
 
+/* Returns:
+ * -1 if destination reached, or
+ * number of frames written to audio device, or
+ * < -1 in case of error. (-EPERM == -1 cannot be returned)
+ */
 int main_iteration(void)
 {
 	int i;
 	int steps[MAX_DIM];
 	int reps;
+	int written;
 
-	if (tim >= dist) {
-		return 0;
-		/*
-		dst = next(self.position_generator, self.position)
-		print "New destination:", repr(dst)
-		self.set_destination(*dst)
-		*/
-	}
+	if (tim >= dist)
+		return -1;
+
 	pos_iteration(steps);
 	for (i = 0; i < MAX_DIM; i ++) {
 		if (steps[i]) {
@@ -313,8 +315,8 @@ int main_iteration(void)
 		}
 	}
 	reps = (int)(1.0 / delta_t);
-	write_current_reps(currents, reps);
-	return 1;
+	written = write_current_reps(currents, reps);
+	return written;
 }
 
 /* Oversimplistic fileno() implementation assuming there's only one file-
@@ -330,10 +332,22 @@ int audio_fileno(void)
 
 void process_one_move(void)
 {
-	for(;;) {
-		if (!main_iteration())
+	for (;;) {
+		if (main_iteration() < 0)
 			break;
 	}
+}
+
+int push_more_audio_data(void)
+{
+	int ret = 0;
+
+	for (;;) {
+		ret = main_iteration();
+		if (ret) /* Wrote data or error ? */
+			return ret;
+	}
+	return ret; /* Never reached */
 }
 
 void zero_output(void)
