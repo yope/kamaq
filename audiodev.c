@@ -12,6 +12,7 @@
 #include <alsa/asoundlib.h>
 #include <math.h>
 #include <string.h>
+#include <sys/poll.h>
 #include "audiodev.h"
 
 #define PERIODSIZE 128
@@ -314,6 +315,17 @@ int main_iteration(void)
 	reps = (int)(1.0 / delta_t);
 	write_current_reps(currents, reps);
 	return 1;
+}
+
+/* Oversimplistic fileno() implementation assuming there's only one file-
+ * descriptor involved. Should be the case anyway */
+int audio_fileno(void)
+{
+	struct pollfd pfd;
+
+	snd_pcm_poll_descriptors(playback_handle, &pfd, 1);
+
+	return pfd.fd;
 }
 
 void process_one_move(void)

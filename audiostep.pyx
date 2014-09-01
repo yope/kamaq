@@ -22,6 +22,7 @@ cdef extern from "audiodev.h":
 	void close_audio()
 	void set_feedrate(double rate)
 	void set_constant_level(double *c)
+	int audio_fileno()
 
 cdef class audiostep:
 	cdef int handle
@@ -56,6 +57,9 @@ cdef class audiostep:
 
 	def set_feedrate(self, rate):
 		set_feedrate(rate)
+
+	def fileno(self):
+		return audio_fileno()
 
 	def set_constant_current(self, c):
 		cdef int i
