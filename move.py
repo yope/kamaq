@@ -59,24 +59,3 @@ class Move(object):
 				yield ("position", p)
 		raise StopIteration
 
-if __name__ == "__main__":
-	from config import Config
-	from stepper import StepperCluster
-
-	cfg = Config("grunner.conf")
-	gname = "enchufe.gcode"
-	if len(sys.argv) > 1:
-		gname = sys.argv[1]
-	g = GCode(cfg, gname)
-	m = Move(cfg, g)
-	n = cfg.settings["num_motors"]
-	snd = cfg.settings["sound_device"]
-	sc = StepperCluster(snd, n, cfg, m)
-	def signal_handler(signal, frame):
-		print('You pressed Ctrl+C!')
-		sc.zero_output()
-		sc.close()
-		sys.exit(0)
-	signal.signal(signal.SIGINT, signal_handler)
-	sc.main_loop()
-
