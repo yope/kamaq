@@ -29,7 +29,7 @@ static double position[MAX_DIM];
 static double origin[MAX_DIM];
 static double destination[MAX_DIM];
 static double incvec[MAX_DIM];
-static int16_t buf[PERIODSIZE * MAX_DIM * 2];
+static int16_t buf[PERIODSIZE * MAX_DIM * 4]; /* Make buf hold twice a period */
 unsigned int buf_idx = 0;
 static double tim;
 static double dist;
@@ -265,15 +265,17 @@ static int write_current_reps(double *c, int reps)
 		for(i = 0; i < (dim * 2); i++) {
 			buf[buf_idx + i] = (int16_t)c[i];
 		}
-		buf_idx += dim * 2;
+		if (buf_idx < (sizeof(buf) - dim * 2))
+			buf_idx += dim * 2;
 		if(buf_idx >= (PERIODSIZE * dim * 2)) {
 			if ((err = snd_pcm_writei(playback_handle, buf, PERIODSIZE)) != PERIODSIZE) {
 				fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
-				return err;
+				snd_pcm_prepare(playback_handle);
+			} else {
+				ret += err;
+				buf_idx -= (PERIODSIZE * dim * 2);
 			}
-			ret += err;
 			//printf("Wrote %d periods\n", err);
-			buf_idx = 0;
 		}
 	}
 	return ret;
