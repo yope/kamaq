@@ -90,6 +90,8 @@ class GCode(object):
 	def command_generator(self):
 		for l in self.f:
 			cmd = l[0]
+			if cmd == ";":
+				print l.strip(" \r\n")
 			if not cmd in ['G', 'M', 'T']:
 				continue
 			ret = self.process_line(cmd, l[1:].strip(" \r\n"))

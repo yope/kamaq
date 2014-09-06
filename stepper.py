@@ -9,6 +9,7 @@
 # vim: set tabstop=4:
 
 from audiostep import audiostep
+import asyncore
 
 class StepperCluster(object):
 	def __init__(self, audiodev, dim, cfg, move):
@@ -17,7 +18,9 @@ class StepperCluster(object):
 		self.audio = audiostep(audiodev, dim)
 		self.dim = dim
 
-	def main_iteration(self):
+	def get_next_destination(self):
+		if self.move is None:
+			return None
 		try:
 			obj = next(self.move.movements)
 		except StopIteration:
@@ -33,8 +36,13 @@ class StepperCluster(object):
 			self.set_destination(pos)
 		else:
 			print "SC: Unknown object:", repr(obj)
-		self.process_one_move()
 		return True
+
+	def main_iteration(self):
+		ret = self.get_next_destination()
+		if ret:
+			self.process_one_move()
+		return ret
 
 	def set_feedrate(self, rate):
 		self.audio.set_feedrate(rate / 600.0)
@@ -52,10 +60,10 @@ class StepperCluster(object):
 		self.audio.close()
 
 	def fileno(self):
-		self.audio.fileno()
+		return self.audio.fileno()
 
 	def write_more(self):
-		self.audio.write_more()
+		return self.audio.write_more()
 
 	def main_loop(self):
 		while True:
@@ -64,3 +72,28 @@ class StepperCluster(object):
 		self.zero_output()
 		self.close()
 
+class StepperClusterDispatcher(asyncore.file_dispatcher):
+	def __init__(self, stepper_cluster, callback):
+		self.sc = stepper_cluster
+		self.cb = callback
+		asyncore.file_dispatcher.__init__(self, self.sc.fileno())
+
+	def writable(self):
+		return True
+
+	def readable(self):
+		return False
+
+	def exceptable(self):
+		return False
+
+	def handle_write(self):
+		ret = self.sc.write_more()
+		while ret is None:
+			ret = self.sc.get_next_destination()
+			if ret is None:
+				break
+			if ret:
+				ret = self.sc.write_more()
+		if ret is None:
+			self.cb.end_of_file()

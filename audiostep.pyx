@@ -52,6 +52,9 @@ cdef class audiostep:
 		ret = push_more_audio_data();
 		if ret < -1:
 			raise IOError
+		elif ret == -1:
+			return None
+		return ret
 
 	def process_one_move(self):
 		process_one_move()
@@ -66,7 +69,9 @@ cdef class audiostep:
 		set_feedrate(rate)
 
 	def fileno(self):
-		return audio_fileno()
+		cdef int ret
+		ret = audio_fileno()
+		return ret
 
 	def set_constant_current(self, c):
 		cdef int i

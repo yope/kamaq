@@ -11,10 +11,12 @@
 
 from config import Config
 from gcode import GCode
-from stepper import StepperCluster
+from stepper import StepperCluster, StepperClusterDispatcher
 from move import Move
 import sys
 import signal
+import asyncore
+from gpio import AsyncGPInput
 
 class GRunner(object):
 	def __init__(self, argv):
@@ -79,12 +81,19 @@ class GRunner(object):
 		print " -e <num>          : Extruder movement"
 		print " -f <speed>        : Feedrate in mm/minute"
 
-	def run_file(self, fname):
-		g = GCode(self.cfg, fname)
-		m = Move(self.cfg, g)
-		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
-		self.sc.main_loop()
+	def prepare_endswitches(self):
+		self.esw = {}
+		for axis in ["X", "Y", "Z"]:
+			eswname = "endstop_" + axis
+			self.esw[eswname] = AsyncGPInput(eswname, self)
+
+	def gpio_event(self, name):
+		gpi = self.esw[name]
+		print "GPIO Event from", name, "value:", gpi.read_value()
+
+	def end_of_file(self):
 		self.sc.close()
+		sys.exit(0)
 
 	def signal_handler(self, signal, frame):
 		print('You pressed Ctrl+C!')
@@ -94,12 +103,21 @@ class GRunner(object):
 		sys.exit(0)
 
 	def move_to(self, vec, speed):
+		self.prepare_endswitches()
 		m = Move(self.cfg, None)
-		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
+		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, None)
 		self.sc.set_feedrate(speed)
 		self.sc.set_destination(m.transform(vec))
-		self.sc.process_one_move()
-		self.sc.close()
+		self.scd = StepperClusterDispatcher(self.sc, self)
+		asyncore.loop()
+
+	def run_file(self, fname):
+		self.prepare_endswitches()
+		g = GCode(self.cfg, fname)
+		m = Move(self.cfg, g)
+		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
+		self.scd = StepperClusterDispatcher(self.sc, self)
+		asyncore.loop()
 
 if __name__ == "__main__":
 	gr = GRunner(sys.argv[1:])
