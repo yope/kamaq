@@ -9,14 +9,29 @@
 # vim: set tabstop=4:
 
 from audiostep import audiostep
+from gpio import AsyncGPInput
 import asyncore
 
 class StepperCluster(object):
 	def __init__(self, audiodev, dim, cfg, move):
 		self.move = move
 		self.cfg = cfg
+		self.invert = [1 - int(x) for x in cfg.settings["invert_motor"]]
 		self.audio = audiostep(audiodev, dim)
 		self.dim = dim
+		self.prepare_endswitches()
+
+	def prepare_endswitches(self):
+		self.esw = []
+		for axis in ["X", "Y", "Z"]:
+			eswname = "endstop_" + axis
+			self.esw.append(AsyncGPInput(eswname, self))
+
+	def gpio_event(self, name, val):
+		print "GPIO Event from", name, "value:", val
+		self.stop()
+		self.cancel_destination()
+		self.restart()
 
 	def get_next_destination(self):
 		if self.move is None:
@@ -34,6 +49,9 @@ class StepperCluster(object):
 		elif cmd == "position":
 			#print "Position:", repr(pos)
 			self.set_destination(pos)
+		elif cmd == "sethome":
+			print "Setting home pos:", repr(self.audio.get_position())
+			self.audio.set_home()
 		else:
 			print "SC: Unknown object:", repr(obj)
 		return True
@@ -48,6 +66,11 @@ class StepperCluster(object):
 		self.audio.set_feedrate(rate / 600.0)
 
 	def set_destination(self, pos):
+		current = self.audio.get_position()
+		for i, sw in enumerate(self.esw):
+			inp = sw.read_value()
+			if not inp and current[i] > pos[i] * self.invert[i]:
+				pos[i] = current[i]
 		self.audio.set_destination(pos)
 
 	def process_one_move(self):
@@ -104,5 +127,5 @@ class StepperClusterDispatcher(asyncore.file_dispatcher):
 				break
 			if ret:
 				ret = self.sc.write_more()
-		if ret is None:
+		if not ret:
 			self.cb.end_of_file()

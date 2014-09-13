@@ -19,6 +19,8 @@ class Config(object):
 			"motor_name" : "['X', 'Y', 'Z', 'E']",
 			"max_speed" : "[200, 200, 200, 200]",
 			"steps_per_mm" : "[80, 80, 2560, 80]",
+			"invert_motor" : "[True, False, False, True]",
+			"print_volume" : "[200, 200, 200]",
 			"sound_device" : "'Device'",
 			"sound_rate" : "48000",
 		}

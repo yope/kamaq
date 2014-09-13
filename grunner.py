@@ -16,7 +16,7 @@ from move import Move
 import sys
 import signal
 import asyncore
-from gpio import AsyncGPInput
+from cStringIO import StringIO
 
 class GRunner(object):
 	def __init__(self, argv):
@@ -36,6 +36,8 @@ class GRunner(object):
 				fname = argv.pop(0)
 				cmd = a
 			elif a == "-g":
+				cmd = a
+			elif a == "-H":
 				cmd = a
 			elif a == "-x":
 				vec[0] = float(argv.pop(0))
@@ -62,6 +64,8 @@ class GRunner(object):
 		elif cmd == "-g":
 			print "Executing single movement to:", repr(vec), "at speed:", speed
 			self.move_to(vec, speed)
+		elif cmd == "-H":
+			self.homing()
 		else:
 			print "Error: Unimplemented command:", cmd
 		return
@@ -73,25 +77,22 @@ class GRunner(object):
 		print "   %s [-i <filename>|-g] [options]\n" % (name)
 		print "Commands:"
 		print " -i <filename>     : Execute all G-codes from file <filename>"
-		print " -g                : Process one move\n"
-		print "Options for command -g:"
+		print " -g                : Process one move"
+		print " -H                : Home position"
+		print "\nOptions for command -g:"
 		print " -x <num>          : Move to X-coordinate <num> in millimeters (default 0)"
 		print " -y <num>          : Y-coordinate"
 		print " -z <num>          : Z-coordinate"
 		print " -e <num>          : Extruder movement"
 		print " -f <speed>        : Feedrate in mm/minute"
 
-	def prepare_endswitches(self):
-		self.esw = {}
-		for axis in ["X", "Y", "Z"]:
-			eswname = "endstop_" + axis
-			self.esw[eswname] = AsyncGPInput(eswname, self)
-
-	def gpio_event(self, name):
-		gpi = self.esw[name]
-		print "GPIO Event from", name, "value:", gpi.read_value()
-
 	def end_of_file(self):
+		print "EOF"
+		self.sc.zero_output()
+		self.sc.zero_output()
+		self.sc.zero_output()
+		self.sc.zero_output()
+		self.sc.zero_output()
 		self.sc.close()
 		sys.exit(0)
 
@@ -103,7 +104,6 @@ class GRunner(object):
 		sys.exit(0)
 
 	def move_to(self, vec, speed):
-		self.prepare_endswitches()
 		m = Move(self.cfg, None)
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, None)
 		self.sc.set_feedrate(speed)
@@ -112,12 +112,15 @@ class GRunner(object):
 		asyncore.loop()
 
 	def run_file(self, fname):
-		self.prepare_endswitches()
 		g = GCode(self.cfg, fname)
 		m = Move(self.cfg, g)
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
+
+	def homing(self):
+		f = StringIO("G28\n")
+		self.run_file(f)
 
 if __name__ == "__main__":
 	gr = GRunner(sys.argv[1:])

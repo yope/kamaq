@@ -14,7 +14,10 @@ import sys
 
 class GCode(object):
 	def __init__(self, cfg, filename):
-		self.f = open(filename, "r")
+		if isinstance(filename, str):
+			self.f = open(filename, "r")
+		else:
+			self.f = filename # Assume it's a file-like object
 		self.dim = cfg.settings["num_motors"]
 		self.motor_name = cfg.settings["motor_name"]
 		self.pos = {}
@@ -57,9 +60,10 @@ class GCode(object):
 			pass
 		elif code == 28: # Home position
 			print "Home position"
-			# TODO: Implement homing
+			return {"command": "home"}
 		elif code == 90: # Absolute positioning
-			pass
+			print "Set Home and absolute positioning"
+			return {"command": "sethome"}
 		elif code == 92: # Set home
 			# TODO: Implement home offsetting
 			pass

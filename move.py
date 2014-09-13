@@ -16,9 +16,12 @@ import sys
 
 class Move(object):
 	def __init__(self, cfg, gcode):
-		self.mm2steps = [float(x) for x in cfg.settings["steps_per_mm"]]
+		self.mm2steps = [float(x * (1 - int(y) * 2)) for x, y in zip(
+				cfg.settings["steps_per_mm"], cfg.settings["invert_motor"])]
+		print repr(self.mm2steps)
 		self.dim = cfg.settings["num_motors"]
 		self.motor_name = cfg.settings["motor_name"]
+		self.print_volume = cfg.settings["print_volume"]
 		self.motor_name_indexes = {}
 		for i in range(len(self.motor_name)):
 			self.motor_name_indexes[self.motor_name[i]] = i
@@ -26,6 +29,7 @@ class Move(object):
 		self.gcode = gcode
 		if gcode is not None:
 			self.start()
+		self.homing = None
 
 	def start(self):
 		self.movements = self.movement_generator()
@@ -34,17 +38,58 @@ class Move(object):
 		ret = map(lambda x, y: x * y, gpos, self.mm2steps)
 		return ret
 
+	def start_homing(self):
+		self.homing = self.homing_generator()
+
+	def homing_generator(self):
+		pos = {}
+		pos["command"] = "position"
+		for i in range(3):
+			for m in self.motor_name:
+				pos[m] = 0.0
+			pos[self.motor_name[i]] = -self.print_volume[i]
+			if i < 2:
+				pos["F"] = 80.0
+			else:
+				pos["F"] = 120.0
+			yield pos
+			yield {"command" : "sethome"}
+			if i < 2:
+				pos["F"] = 5.0
+			else:
+				pos["F"] = 60.0
+			pos[self.motor_name[i]] = 4
+			yield pos
+			pos[self.motor_name[i]] = -6
+			yield pos
+			yield {"command" : "sethome"}
+			if i >= 2:
+				continue
+			pos[self.motor_name[i]] = 4
+			yield pos
+			pos[self.motor_name[i]] = -6
+			yield pos
+			yield {"command" : "sethome"}
+
 	def movement_generator(self):
 		#while True:
 		#	for p in self.plist:
 		#		yield self.transform(p)
 		while True:
+			if self.homing:
+				gen = self.homing
+			else:
+				gen = self.gcode.commands
 			try:
-				obj = next(self.gcode.commands)
+				obj = next(gen)
 			except StopIteration:
-				break
+				if gen == self.homing:
+					self.homing = None
+					continue
+				else:
+					break
 			if not "command" in obj:
-				print "MOVE: Onknown command object:", repr(obj)
+				print "MOVE: Unknown command object:", repr(obj)
 				continue
 			cmd = obj["command"]
 			if cmd == "position":
@@ -57,5 +102,9 @@ class Move(object):
 						yield ("feedrate", obj[w])
 				p = self.transform(pos)
 				yield ("position", p)
+			elif cmd == "home":
+				self.start_homing()
+			elif cmd == "sethome":
+				yield (cmd, None)
 		raise StopIteration
 
