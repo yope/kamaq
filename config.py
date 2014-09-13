@@ -23,6 +23,13 @@ class Config(object):
 			"print_volume" : "[200, 200, 200]",
 			"sound_device" : "'Device'",
 			"sound_rate" : "48000",
+			"hwmon_device" : "'hwmon0'",
+			"temp_bed_sensor" : "'in7_input'",
+			"temp_ext_sensor" : "'in6_input'",
+			"temp_bed_scale" : "5.0",
+			"temp_ext_scale" : "5.0",
+			"temp_bed_offset" : "-0.02",
+			"temp_ext_offset" : "-0.02",
 		}
 		self.config = ConfigParser.SafeConfigParser(defaults)
 		self.config.read([cfgfilename])
