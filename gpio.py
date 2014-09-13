@@ -67,9 +67,20 @@ def asyncore_poll_with_except(timeout=0.0, map=None):
 
 asyncore.poll = asyncore_poll_with_except
 
-class AsyncGPInput(asyncore.file_dispatcher):
-	def __init__(self, name, callback, edge="falling", debounce=0.01):
+class GPIOBase(object):
+	def __init__(self, name):
 		self.name = name
+		self.gpiodir = os.path.join(GPIO_PATH, name)
+		self.gpiovalue = os.path.join(self.gpiodir, "value")
+
+	def _write_sys(self, fname, val):
+		f = open(fname, "wb")
+		f.write(str(val) + "\n")
+		f.close()
+
+class AsyncGPInput(asyncore.file_dispatcher, GPIOBase):
+	def __init__(self, name, callback, edge="falling", debounce=0.01):
+		GPIOBase.__init__(self, name)
 		self.edge = edge
 		self.expt_ti = 0
 		self.debounce = debounce
@@ -77,17 +88,10 @@ class AsyncGPInput(asyncore.file_dispatcher):
 		self.gpio_open(name)
 		asyncore.file_dispatcher.__init__(self, self.gpio_fd)
 
-	def _write_sys(self, fname, val):
-		f = open(fname, "wb")
-		f.write(str(val) + "\n")
-		f.close()
-
 	def gpio_open(self, name):
-		gpiodir = os.path.join(GPIO_PATH, name)
-		gpiovalue = os.path.join(gpiodir, "value")
-		gpioedge = os.path.join(gpiodir, "edge")
+		gpioedge = os.path.join(self.gpiodir, "edge")
 		self._write_sys(gpioedge, self.edge)
-		self.gpio_fd = os.open(gpiovalue, os.O_RDONLY | os.O_NONBLOCK)
+		self.gpio_fd = os.open(self.gpiovalue, os.O_RDONLY | os.O_NONBLOCK)
 		self.enable_exceptions()
 
 	def gpio_close(self):
@@ -124,17 +128,31 @@ class AsyncGPInput(asyncore.file_dispatcher):
 		self.expt_ti = ti + self.debounce
 		self.callback.gpio_event(self.name, val)
 
+class GPOutput(GPIOBase):
+	def __init__(self, name, initial="low"):
+		GPIOBase.__init__(self, name)
+		self.config_output(initial)
+
+	def config_output(self, initial):
+		gpiodir = os.path.join(self.gpiodir, "direction")
+		self._write_sys(gpiodir, initial)
+
+	def set_output(self, val):
+		self._write_sys(self.gpiovalue, int(val))
+
 # Test function
 if __name__ == "__main__":
 	class cbtest:
-		def __init__(self, name):
-			self.gpi = AsyncGPInput(name, self)
+		def __init__(self, namein, nameout):
+			self.gpi = AsyncGPInput(namein, self)
+			self.gpo = GPOutput(nameout)
+			self.val = True
 
 		def gpio_event(self, name, val):
 			print "GPIO Event from", name, "value:", val
-			self.gpi.disable_exceptions()
-			time.sleep(0.1) # Debounce
-			self.gpi.enable_exceptions()
-	cb = cbtest("endstop_X")
+			self.gpo.set_output(self.val)
+			self.val = not self.val
+
+	cb = cbtest("endstop_X", "heater_EXT")
 	asyncore.loop()
 
