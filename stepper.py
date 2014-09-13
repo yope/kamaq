@@ -59,6 +59,15 @@ class StepperCluster(object):
 	def close(self):
 		self.audio.close()
 
+	def stop(self):
+		self.audio.stop()
+
+	def restart(self):
+		self.audio.restart()
+
+	def cancel_destination(self):
+		self.audio.cancel_destination()
+
 	def fileno(self):
 		return self.audio.fileno()
 

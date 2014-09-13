@@ -381,3 +381,18 @@ void set_feedrate(double rate)
 {
 	feedrate = rate;
 }
+
+void stop_audio(void)
+{
+	snd_pcm_drop(playback_handle);
+}
+
+void cancel_destination(void)
+{
+	tim = dist; /* Do as if we reached our destination */
+}
+
+void restart_audio(void)
+{
+	snd_pcm_prepare(playback_handle);
+}

@@ -24,6 +24,9 @@ cdef extern from "audiodev.h":
 	void set_constant_level(double *c)
 	int audio_fileno()
 	int push_more_audio_data()
+	void stop_audio()
+	void restart_audio()
+	void cancel_destination()
 
 cdef class audiostep:
 	cdef int handle
@@ -62,8 +65,17 @@ cdef class audiostep:
 	def zero_output(self):
 		zero_output()
 
+	def stop(self):
+		stop_audio()
+
+	def restart(self):
+		restart_audio()
+
 	def close(self):
 		close_audio()
+
+	def cancel_destination(self):
+		cancel_destination()
 
 	def set_feedrate(self, rate):
 		set_feedrate(rate)
