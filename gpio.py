@@ -68,9 +68,11 @@ def asyncore_poll_with_except(timeout=0.0, map=None):
 asyncore.poll = asyncore_poll_with_except
 
 class AsyncGPInput(asyncore.file_dispatcher):
-	def __init__(self, name, callback, edge="falling"):
+	def __init__(self, name, callback, edge="falling", debounce=0.01):
 		self.name = name
 		self.edge = edge
+		self.expt_ti = 0
+		self.debounce = debounce
 		self.callback = callback
 		self.gpio_open(name)
 		asyncore.file_dispatcher.__init__(self, self.gpio_fd)
@@ -112,7 +114,15 @@ class AsyncGPInput(asyncore.file_dispatcher):
 		return int(txt)
 
 	def handle_expt(self):
-		self.callback.gpio_event(self.name)
+		ti = time.time()
+		val = self.read_value()
+		if not self.expt_ti:
+			self.expt_ti = ti + self.debounce
+			return
+		if self.expt_ti > ti:
+			return
+		self.expt_ti = ti + self.debounce
+		self.callback.gpio_event(self.name, val)
 
 # Test function
 if __name__ == "__main__":
@@ -120,8 +130,8 @@ if __name__ == "__main__":
 		def __init__(self, name):
 			self.gpi = AsyncGPInput(name, self)
 
-		def gpio_event(self, name):
-			print "GPIO Event from", name, "value:", self.gpi.read_value()
+		def gpio_event(self, name, val):
+			print "GPIO Event from", name, "value:", val
 			self.gpi.disable_exceptions()
 			time.sleep(0.1) # Debounce
 			self.gpi.enable_exceptions()
