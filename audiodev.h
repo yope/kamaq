@@ -16,5 +16,7 @@ int push_more_audio_data(void);
 void stop_audio(void);
 void restart_audio(void);
 void cancel_destination(void);
+double *get_position(void);
+void set_position(double *v);
 
 #endif

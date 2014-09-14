@@ -209,7 +209,7 @@ void set_destination(double *v)
 	vec_copy(origin, position);
 	vec_copy(destination, v);
 	tim = 0.0;
-	delta_t = 0.05;
+	delta_t = 0.01;
 	dist = vec_dist(position, v);
 	if(dist == 0.0) {
 		vec_clear(incvec);
@@ -244,7 +244,7 @@ void pos_iteration(int *steps)
 
 	next_position(steps);
 	dt = dist - tim;
-	if ((((delta_t - 0.05) / dtinc) >= dt) && (delta_t > 0.05))
+	if ((((delta_t - 0.01) / dtinc) >= dt) && (delta_t > 0.01))
 		delta_t -= dtinc;
 	else if (delta_t < (feedrate - dtinc))
 		delta_t += dtinc;
@@ -395,4 +395,14 @@ void cancel_destination(void)
 void restart_audio(void)
 {
 	snd_pcm_prepare(playback_handle);
+}
+
+double *get_position(void)
+{
+	return position;
+}
+
+void set_position(double *v)
+{
+	vec_copy(position, v);
 }

@@ -27,6 +27,8 @@ cdef extern from "audiodev.h":
 	void stop_audio()
 	void restart_audio()
 	void cancel_destination()
+	double *get_position()
+	void set_position(double *v)
 
 cdef class audiostep:
 	cdef int handle
@@ -46,6 +48,26 @@ cdef class audiostep:
 		for i in range(MAX_DIM):
 			self.pos[i] = v[i]
 		set_destination(self.pos)
+
+	def set_position(self, v):
+		cdef int i
+		for i in range(MAX_DIM):
+			self.pos[i] = v[i]
+		set_position(self.pos)
+
+	def set_home(self):
+		cdef int i
+		for i in range(MAX_DIM):
+			self.pos[i] = 0.0
+		set_position(self.pos)
+
+	def get_position(self):
+		cdef double *pos
+		ret = []
+		pos = get_position()
+		for i in range(MAX_DIM):
+			ret.append(pos[i])
+		return ret
 
 	def main_iteration(self):
 		return main_iteration()
