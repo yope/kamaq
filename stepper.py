@@ -20,6 +20,10 @@ class StepperCluster(object):
 		self.audio = audiostep(audiodev, dim)
 		self.dim = dim
 		self.prepare_endswitches()
+		self.speed_scale = 1.0
+
+	def set_speed_scale(self, ss):
+		self.speed_scale = ss
 
 	def prepare_endswitches(self):
 		self.esw = []
@@ -63,7 +67,7 @@ class StepperCluster(object):
 		return ret
 
 	def set_feedrate(self, rate):
-		self.audio.set_feedrate(rate / 600.0)
+		self.audio.set_feedrate((self.speed_scale * rate) / 600.0)
 
 	def set_destination(self, pos):
 		current = self.audio.get_position()

@@ -27,6 +27,7 @@ class GRunner(object):
 		cmd = None
 		vec = [0.0 for x in range(self.dim)]
 		speed = 3600.0 / 60.0
+		speed_scale = 1.0
 		while True:
 			try:
 				a = argv.pop(0)
@@ -52,6 +53,8 @@ class GRunner(object):
 			elif a == "-h" or a == "--help":
 				self.print_help()
 				return
+			elif a == "-s":
+				speed_scale = float(argv.pop(0))
 			else:
 				print "Unknown command-line option:", a
 				return
@@ -60,7 +63,7 @@ class GRunner(object):
 			return
 		elif cmd == "-i":
 			print "Executing G-Code file:", fname
-			self.run_file(fname)
+			self.run_file(fname, speed_scale)
 		elif cmd == "-g":
 			print "Executing single movement to:", repr(vec), "at speed:", speed
 			self.move_to(vec, speed)
@@ -85,6 +88,8 @@ class GRunner(object):
 		print " -z <num>          : Z-coordinate"
 		print " -e <num>          : Extruder movement"
 		print " -f <speed>        : Feedrate in mm/minute"
+		print "\nOptions for command -i:"
+		print " -s                : Speed scale factor (default 1.0)"
 
 	def end_of_file(self):
 		print "EOF"
@@ -111,10 +116,11 @@ class GRunner(object):
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
 
-	def run_file(self, fname):
+	def run_file(self, fname, ss):
 		g = GCode(self.cfg, fname)
 		m = Move(self.cfg, g)
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
+		self.sc.set_speed_scale(ss)
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
 
