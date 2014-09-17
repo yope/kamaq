@@ -25,7 +25,6 @@ class Move(object):
 		self.motor_name_indexes = {}
 		for i in range(len(self.motor_name)):
 			self.motor_name_indexes[self.motor_name[i]] = i
-		#self.plist = [[100, 80, 50, 20], [-10, -100, 50, 20], [-10, 20, 30, 40], [0, 0, 0, 0]]
 		self.gcode = gcode
 		if gcode is not None:
 			self.start()
@@ -72,9 +71,6 @@ class Move(object):
 			yield {"command" : "sethome"}
 
 	def movement_generator(self):
-		#while True:
-		#	for p in self.plist:
-		#		yield self.transform(p)
 		while True:
 			if self.homing:
 				gen = self.homing
