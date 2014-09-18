@@ -17,8 +17,11 @@ Well, because as is the case with all engineers, I always know better ;-)
 
 This project is currently in a very early stage and in heavy development.
 The software is able to drive 4 stepper-motors currently from data read out
-of a supplied G-Code command file. No support for heaters or end-stops yet.
-Most G-codes are ignored, only G1/G0 movements are executed right now.
+of a supplied G-Code command file. Most G-codes are ignored, only G1/G0
+movements are executed and G28 (home position) as wel as G90 (set home) are
+interpreted. Endswitch support is mostly working, and there are rudimentary
+modules for HWmon sensor-based temperature measurements, as well as a simple
+PID controller and a thermistor class.
 
 3. Platform requirements
 ------------------------
