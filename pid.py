@@ -10,6 +10,32 @@
 # vim: set tabstop=4:
 
 import time
+import multiprocessing
+import Queue
+
+def PidProcess(pid, cmdqueue):
+	cmd = ""
+	print "PID: Starting", pid.actuator.name, "..."
+	while True:
+		while not cmdqueue.empty():
+			try:
+				obj = cmdqueue.get()
+			except Queue.Empty:
+				break
+			if not "command" in obj:
+				print "PID: Unknown command object:", repr(obj)
+				continue
+			cmd = obj["command"]
+			if cmd == "setpoint":
+				pid.set_setpoint(obj["value"])
+			elif cmd == "shutdown":
+				break
+			else:
+				print "PID: Unsupported command:", cmd
+		if cmd == "shutdown":
+			break
+		pid.iteration()
+	print "PID: Shutting down", pid.actuator.name, "..."
 
 class PidController(object):
 	def __init__(self, sensor, actuator, P, I, D, period=1.0):
@@ -20,18 +46,31 @@ class PidController(object):
 		self.D = D / period
 		self.integ = 0.0
 		self.setpoint = 0
+		self.errq = Queue.Queue()
 		self.err0 = 0.0
 		self.output = 0.0
 		self.period = period
 		self.windup_limit = 100.0
+		self.cmdqueue = multiprocessing.Queue()
+		self.outvalue = multiprocessing.Value('d')
+		self.proc = multiprocessing.Process(target=PidProcess,
+							args=(self, self.cmdqueue))
+		self.spawned = False
 
 	def set_setpoint(self, sp):
-		self.setpoint = sp
+		if self.spawned:
+			self.cmdqueue.put({"command": "setpoint", "value": sp})
+		else:
+			self.setpoint = sp
 
 	def iteration(self):
 		err = self.setpoint - self.sensor.read()
 		derr = err - self.err0
-		self.err0 = err
+		self.errq.put(err)
+		if self.errq.qsize() < 3:
+			self.err0 = err
+		else:
+			self.err0 = self.errq.get()
 		self.integ += err
 		if self.integ > self.windup_limit:
 			self.integ = self.windup_limit
@@ -49,11 +88,24 @@ class PidController(object):
 		if ontime < self.period:
 			self.actuator.set_output(0)
 			time.sleep(self.period - ontime)
+		self.outvalue.value = self.output
 
 	def get_output(self):
-		return self.output
+		return self.outvalue.value
+
+	def spawn(self):
+		self.proc.start()
+		self.spawned = True
+
+	def shutdown(self):
+		if not self.spawned:
+			return
+		self.cmdqueue.put({"command": "shutdown"})
+		self.proc.join()
+		self.actuator.set_output(0)
 
 if __name__ == "__main__":
+	import signal, sys
 	from temp100k import Thermistor100k
 	from hwmon import ScaledSensor
 	from config import Config
@@ -61,9 +113,17 @@ if __name__ == "__main__":
 	s = ScaledSensor(Config("grunner.conf"), "EXT")
 	t = Thermistor100k(s)
 	o = GPOutput("heater_EXT")
-	p = PidController(t, o, 0.5, 0.001, 0.5)
-	sp = 30
+	p = PidController(t, o, 0.2, 0.002, 0.5)
+	def signal_handler(signal, frame):
+		print('You pressed Ctrl+C!')
+		p.shutdown()
+		sys.exit(0)
+	signal.signal(signal.SIGINT, signal_handler)
+	p.spawn()
+	sp = 230.0
 	p.set_setpoint(sp)
 	while True:
-		p.iteration()
 		print "Temp =", t.read(), "setpoint =", sp, "Ouput =", p.get_output()
+		time.sleep(1.0)
+	p.shutdown()
+
