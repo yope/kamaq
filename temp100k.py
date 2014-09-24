@@ -23,7 +23,9 @@ class Thermistor100k(object):
 		vs = self.sensor.read()
 		if vs <= 0.0:
 			vs = 0.0001
-		r = 2000.0 + (5.0 * 1000.0) / vs
+		r = (5.0 * 1000.0) / vs - 2000.0
+		if r < 0.001:
+			r = 0.001
 		return r
 
 	def read(self):
