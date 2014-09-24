@@ -31,11 +31,14 @@ class GCode(object):
 		if code == 82: # Absolute E codes
 			pass
 		elif code == 104: # Set hotend temperature
-			print "Set temperature:", args[0]
+			val = float(args[0][1:])
+			print "Set temperature:", val, "deg. C"
+			return {"command": "setpoint", "type": "hotend", "value": val}
 		elif code == 106: # Set extruder fan speed
 			print "Set extruder fan speed:", args[0]
 		else:
 			print "Unimplemented M: code =", code, repr(args)
+		return None
 
 	def process_G(self, code, args):
 		if code == 1 or code == 0: # Controlled movement

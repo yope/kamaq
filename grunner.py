@@ -13,9 +13,15 @@ from config import Config
 from gcode import GCode
 from stepper import StepperCluster, StepperClusterDispatcher
 from move import Move
+from temp100k import Thermistor100k
+from hwmon import ScaledSensor
+from config import Config
+from gpio import GPOutput
+from pid import PidController
 import sys
 import signal
 import asyncore
+import time
 from cStringIO import StringIO
 
 class GRunner(object):
@@ -28,6 +34,8 @@ class GRunner(object):
 		vec = [0.0 for x in range(self.dim)]
 		speed = 3600.0 / 60.0
 		speed_scale = 1.0
+		temp = None
+		self.ext_pid = None
 		while True:
 			try:
 				a = argv.pop(0)
@@ -55,6 +63,8 @@ class GRunner(object):
 				return
 			elif a == "-s":
 				speed_scale = float(argv.pop(0))
+			elif a == "-t":
+				temp = float(argv.pop(0))
 			else:
 				print "Unknown command-line option:", a
 				return
@@ -63,12 +73,12 @@ class GRunner(object):
 			return
 		elif cmd == "-i":
 			print "Executing G-Code file:", fname
-			self.run_file(fname, speed_scale)
+			self.run_file(fname, speed_scale, temp)
 		elif cmd == "-g":
 			print "Executing single movement to:", repr(vec), "at speed:", speed
 			self.move_to(vec, speed)
 		elif cmd == "-H":
-			self.homing()
+			self.homing(speed_scale)
 		else:
 			print "Error: Unimplemented command:", cmd
 		return
@@ -88,6 +98,7 @@ class GRunner(object):
 		print " -z <num>          : Z-coordinate"
 		print " -e <num>          : Extruder movement"
 		print " -f <speed>        : Feedrate in mm/minute"
+		print " -t <temp>         : Set extruder temperature"
 		print "\nOptions for command -i:"
 		print " -s                : Speed scale factor (default 1.0)"
 
@@ -106,6 +117,8 @@ class GRunner(object):
 		if self.sc is not None:
 			self.sc.zero_output()
 			self.sc.close()
+			if self.ext_pid:
+				self.ext_pid.shutdown()
 		sys.exit(0)
 
 	def move_to(self, vec, speed):
@@ -116,17 +129,30 @@ class GRunner(object):
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
 
-	def run_file(self, fname, ss):
+	def run_file(self, fname, ss, temp=None):
 		g = GCode(self.cfg, fname)
 		m = Move(self.cfg, g)
+		if temp:
+			s = ScaledSensor(Config("grunner.conf"), "EXT")
+			t = Thermistor100k(s)
+			o = GPOutput("heater_EXT")
+			self.ext_pid = PidController(t, o, 0.2, 0.002, 0.5)
+			self.ext_pid.spawn()
+			sp = temp
+			self.ext_pid.set_setpoint(sp)
+			mtemp = t.read()
+			while mtemp < (sp - 5.0):
+				mtemp = t.read()
+				print "Temp =", mtemp, "setpoint =", sp, "Ouput =", self.ext_pid.get_output()
+				time.sleep(1.0)
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
 		self.sc.set_speed_scale(ss)
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
 
-	def homing(self):
+	def homing(self, ss):
 		f = StringIO("G28\n")
-		self.run_file(f)
+		self.run_file(f, ss)
 
 if __name__ == "__main__":
 	gr = GRunner(sys.argv[1:])

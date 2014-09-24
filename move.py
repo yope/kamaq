@@ -102,5 +102,7 @@ class Move(object):
 				self.start_homing()
 			elif cmd == "sethome":
 				yield (cmd, None)
+			elif cmd == "setpoint":
+				pass
 		raise StopIteration
 
