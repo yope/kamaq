@@ -15,13 +15,11 @@ Well, because as is the case with all engineers, I always know better ;-)
 2. Status of this project
 -------------------------
 
-This project is currently in a very early stage and in heavy development.
-The software is able to drive 4 stepper-motors currently from data read out
-of a supplied G-Code command file. Most G-codes are ignored, only G1/G0
-movements are executed and G28 (home position) as wel as G90 (set home) are
-interpreted. Endswitch support is mostly working, and there are rudimentary
-modules for HWmon sensor-based temperature measurements, as well as a simple
-PID controller and a thermistor class.
+This project is currently in an early stage and in heavy development.
+The software can control 4 motors (X, Y, Z and Extruder), read 3 endswitches
+and control the extruder temperature. The G-Code interpreter is still very
+simple, but the software is already able to succesfully print an object from a
+G-Code-file generated with repsnapper.
 
 3. Platform requirements
 ------------------------
@@ -37,8 +35,8 @@ will be enough for controlling 4 stepper-motors.
 -------------------
 
 Of course the main goal for this project is controlling 3D-printer hardware,
-such as the RepRap Prusa i3 for example, but it may very well be suited for
-other applications.
+such as the RepRap Prusa i3 for example, but it may also be suited for other
+applications requiring control of motors from G-Codes.
 
 5. Required hardware
 --------------------
@@ -91,7 +89,8 @@ simple and straight-forward stuff right now hacked together in very little time.
 
  * grunner.py: This command-line tool can execude whole G-Code files or single
    movements by specifying relative distance on each axis (including extruder)
-   on the command-line.
+   on the command-line. It supports homing on endswitches and extruder
+   temperature control.
 
  * set_current.py: Very simple tool that sets constant motor currents for all
    motors specified on the command-line. Can be used for adjusting motor
