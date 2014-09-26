@@ -76,7 +76,7 @@ class GRunner(object):
 			self.run_file(fname, speed_scale, temp)
 		elif cmd == "-g":
 			print "Executing single movement to:", repr(vec), "at speed:", speed
-			self.move_to(vec, speed)
+			self.move_to(vec, speed, temp)
 		elif cmd == "-H":
 			self.homing(speed_scale)
 		else:
@@ -101,28 +101,55 @@ class GRunner(object):
 		print " -t <temp>         : Set extruder temperature"
 		print "\nOptions for command -i:"
 		print " -s                : Speed scale factor (default 1.0)"
+		print " -t <temp>         : Set extruder temperature"
 
 	def end_of_file(self):
 		print "EOF"
-		self.sc.zero_output()
-		self.sc.zero_output()
-		self.sc.zero_output()
-		self.sc.zero_output()
-		self.sc.zero_output()
-		self.sc.close()
-		sys.exit(0)
+		self.shutdown()
 
-	def signal_handler(self, signal, frame):
-		print('You pressed Ctrl+C!')
+	def shutdown(self):
+		if self.ext_pid:
+			self.ext_pid.set_setpoint(0)
+			self.ext_pid.shutdown()
 		if self.sc is not None:
+			self.sc.zero_output()
+			self.sc.zero_output()
+			self.sc.zero_output()
 			self.sc.zero_output()
 			self.sc.close()
 			if self.ext_pid:
 				self.ext_pid.shutdown()
 		sys.exit(0)
 
-	def move_to(self, vec, speed):
+	def signal_handler(self, signal, frame):
+		print('You pressed Ctrl+C!')
+		self.shutdown()
+
+	def preheat(self, temp):
+		if not temp:
+			return
+		s = ScaledSensor(Config("grunner.conf"), "EXT")
+		t = Thermistor100k(s)
+		o = GPOutput("heater_EXT")
+		self.ext_pid = PidController(t, o, 0.2, 0.002, 0.5)
+		self.ext_pid.spawn()
+		sp = temp
+		self.ext_pid.set_setpoint(sp)
+		mtemp = t.read()
+		while mtemp < (sp - 5.0):
+			mtemp = t.read()
+			print "Temp =", mtemp, "setpoint =", sp, "Ouput =", self.ext_pid.get_output()
+			time.sleep(1.0)
+		# Add some delay here to ensure good heat distribution/melting
+		print "Setpoint reached."
+		for i in range(30):
+			mtemp = t.read()
+			print "Temp =", mtemp, "setpoint =", sp, "Ouput =", self.ext_pid.get_output()
+			time.sleep(1.0)
+
+	def move_to(self, vec, speed, temp=None):
 		m = Move(self.cfg, None)
+		self.preheat(temp)
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, None)
 		self.sc.set_feedrate(speed)
 		self.sc.set_destination(m.transform(vec))
@@ -132,19 +159,7 @@ class GRunner(object):
 	def run_file(self, fname, ss, temp=None):
 		g = GCode(self.cfg, fname)
 		m = Move(self.cfg, g)
-		if temp:
-			s = ScaledSensor(Config("grunner.conf"), "EXT")
-			t = Thermistor100k(s)
-			o = GPOutput("heater_EXT")
-			self.ext_pid = PidController(t, o, 0.2, 0.002, 0.5)
-			self.ext_pid.spawn()
-			sp = temp
-			self.ext_pid.set_setpoint(sp)
-			mtemp = t.read()
-			while mtemp < (sp - 5.0):
-				mtemp = t.read()
-				print "Temp =", mtemp, "setpoint =", sp, "Ouput =", self.ext_pid.get_output()
-				time.sleep(1.0)
+		self.preheat(temp)
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
 		self.sc.set_speed_scale(ss)
 		self.scd = StepperClusterDispatcher(self.sc, self)
