@@ -21,9 +21,13 @@ class StepperCluster(object):
 		self.dim = dim
 		self.prepare_endswitches()
 		self.speed_scale = 1.0
+		self.max_feedrate = None
 
 	def set_speed_scale(self, ss):
 		self.speed_scale = ss
+
+	def set_max_feedrate(self, limit):
+		self.max_feedrate = limit
 
 	def prepare_endswitches(self):
 		self.esw = []
@@ -67,7 +71,14 @@ class StepperCluster(object):
 		return ret
 
 	def set_feedrate(self, rate):
-		self.audio.set_feedrate((self.speed_scale * rate) / 600.0)
+		rate = self.speed_scale * rate
+		if self.max_feedrate and rate > self.max_feedrate:
+			rate = self.max_feedrate
+		high = rate / 600.0
+		low = high
+		if low > 0.05:
+			low = 0.05
+		self.audio.set_feedrate(low, high, low)
 
 	def set_destination(self, pos):
 		current = self.audio.get_position()

@@ -33,8 +33,10 @@ class GRunner(object):
 		cmd = None
 		vec = [0.0 for x in range(self.dim)]
 		speed = 3600.0 / 60.0
-		speed_scale = 1.0
-		temp = None
+		self.limit = None
+		self.speed_scale = 1.0
+		self.temp = None
+		self.btemp = None
 		self.ext_pid = None
 		while True:
 			try:
@@ -62,9 +64,13 @@ class GRunner(object):
 				self.print_help()
 				return
 			elif a == "-s":
-				speed_scale = float(argv.pop(0))
+				self.speed_scale = float(argv.pop(0))
 			elif a == "-t":
-				temp = float(argv.pop(0))
+				self.temp = float(argv.pop(0))
+			elif a == "-b":
+				self.btemp = float(argv.pop(0))
+			elif a == "-l":
+				self.limit = float(argv.pop(0))
 			else:
 				print "Unknown command-line option:", a
 				return
@@ -73,12 +79,12 @@ class GRunner(object):
 			return
 		elif cmd == "-i":
 			print "Executing G-Code file:", fname
-			self.run_file(fname, speed_scale, temp)
+			self.run_file(fname)
 		elif cmd == "-g":
 			print "Executing single movement to:", repr(vec), "at speed:", speed
-			self.move_to(vec, speed, temp)
+			self.move_to(vec, speed)
 		elif cmd == "-H":
-			self.homing(speed_scale)
+			self.homing()
 		else:
 			print "Error: Unimplemented command:", cmd
 		return
@@ -87,21 +93,23 @@ class GRunner(object):
 		name = sys.argv[0]
 		print "%s: G-Code runner" % (name)
 		print "Syntax:"
-		print "   %s [-i <filename>|-g] [options]\n" % (name)
+		print "   %s [-i <filename>|-g|-H] [options]\n" % (name)
 		print "Commands:"
 		print " -i <filename>     : Execute all G-codes from file <filename>"
 		print " -g                : Process one move"
 		print " -H                : Home position"
+		print "\nCommon options:"
+		print " -t <temp>         : Set extruder temperature"
+		print " -b <temp>         : Set heated bed temperature"
 		print "\nOptions for command -g:"
 		print " -x <num>          : Move to X-coordinate <num> in millimeters (default 0)"
 		print " -y <num>          : Y-coordinate"
 		print " -z <num>          : Z-coordinate"
 		print " -e <num>          : Extruder movement"
 		print " -f <speed>        : Feedrate in mm/minute"
-		print " -t <temp>         : Set extruder temperature"
 		print "\nOptions for command -i:"
-		print " -s                : Speed scale factor (default 1.0)"
-		print " -t <temp>         : Set extruder temperature"
+		print " -s <factor>       : Speed scale factor (default 1.0)"
+		print " -l <limit>        : Set feedrate limit"
 
 	def end_of_file(self):
 		print "EOF"
@@ -125,15 +133,15 @@ class GRunner(object):
 		print('You pressed Ctrl+C!')
 		self.shutdown()
 
-	def preheat(self, temp):
-		if not temp:
+	def preheat(self):
+		if not self.temp:
 			return
 		s = ScaledSensor(Config("grunner.conf"), "EXT")
 		t = Thermistor100k(s)
 		o = GPOutput("heater_EXT")
 		self.ext_pid = PidController(t, o, 0.2, 0.002, 0.5)
 		self.ext_pid.spawn()
-		sp = temp
+		sp = self.temp
 		self.ext_pid.set_setpoint(sp)
 		mtemp = t.read()
 		while mtemp < (sp - 5.0):
@@ -147,27 +155,28 @@ class GRunner(object):
 			print "Temp =", mtemp, "setpoint =", sp, "Ouput =", self.ext_pid.get_output()
 			time.sleep(1.0)
 
-	def move_to(self, vec, speed, temp=None):
+	def move_to(self, vec, speed):
 		m = Move(self.cfg, None)
-		self.preheat(temp)
+		self.preheat()
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, None)
 		self.sc.set_feedrate(speed)
 		self.sc.set_destination(m.transform(vec))
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
 
-	def run_file(self, fname, ss, temp=None):
+	def run_file(self, fname):
 		g = GCode(self.cfg, fname)
 		m = Move(self.cfg, g)
-		self.preheat(temp)
+		self.preheat()
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
-		self.sc.set_speed_scale(ss)
+		self.sc.set_speed_scale(self.speed_scale)
+		self.sc.set_max_feedrate(self.limit)
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
 
-	def homing(self, ss):
+	def homing(self):
 		f = StringIO("G28\n")
-		self.run_file(f, ss)
+		self.run_file(f)
 
 if __name__ == "__main__":
 	gr = GRunner(sys.argv[1:])
