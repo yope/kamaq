@@ -9,7 +9,7 @@ int main_iteration(void);
 void process_one_move(void);
 void zero_output(void);
 void close_audio(void);
-void set_feedrate(double rate);
+void set_feedrate(double begin, double high, double end);
 void set_constant_level(double *c);
 int audio_fileno(void);
 int push_more_audio_data(void);

@@ -35,6 +35,8 @@ static double tim;
 static double dist;
 static double delta_t;
 static double feedrate = 0.33;
+static double feedrate_begin = 0.05;
+static double feedrate_end = 0.05;
 
 double sintab[STEP_PERIOD_SIZE], costab[STEP_PERIOD_SIZE];
 int angle[MAX_DIM];
@@ -209,7 +211,7 @@ void set_destination(double *v)
 	vec_copy(origin, position);
 	vec_copy(destination, v);
 	tim = 0.0;
-	delta_t = 0.01;
+	delta_t = feedrate_begin;
 	dist = vec_dist(position, v);
 	if(dist == 0.0) {
 		vec_clear(incvec);
@@ -244,7 +246,7 @@ void pos_iteration(int *steps)
 
 	next_position(steps);
 	dt = dist - tim;
-	if ((((delta_t - 0.01) / dtinc) >= dt) && (delta_t > 0.01))
+	if ((((delta_t - feedrate_end) / dtinc) >= dt) && (delta_t > feedrate_end))
 		delta_t -= dtinc;
 	else if (delta_t < (feedrate - dtinc))
 		delta_t += dtinc;
@@ -305,6 +307,8 @@ int main_iteration(void)
 	int i;
 	int steps[MAX_DIM];
 	int reps;
+	double repsf;
+	static double repserr = 0.0;
 	int written;
 
 	if (tim >= dist)
@@ -316,7 +320,9 @@ int main_iteration(void)
 			motor_do_steps(i, steps[i], &currents[i * 2], &currents[i * 2 + 1]);
 		}
 	}
-	reps = (int)(1.0 / delta_t);
+	repsf = (1.0 / delta_t) + repserr;
+	reps = (int)repsf;
+	repserr = (double)reps - repsf;
 	written = write_current_reps(currents, reps);
 	return written;
 }
@@ -377,9 +383,12 @@ void close_audio(void)
 	snd_pcm_close(playback_handle);
 }
 
-void set_feedrate(double rate)
+void set_feedrate(double begin, double high, double end)
 {
-	feedrate = rate;
+	// printf("set_feedrate: low=%f high=%f\n", low, high);
+	feedrate = high;
+	feedrate_begin = begin;
+	feedrate_end = end;
 }
 
 void stop_audio(void)
