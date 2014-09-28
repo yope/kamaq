@@ -21,13 +21,14 @@ class StepperCluster(object):
 		self.dim = dim
 		self.prepare_endswitches()
 		self.speed_scale = 1.0
-		self.max_feedrate = None
+		self.max_feedrate = cfg.settings["max_feedrate"] / 60.0
 
 	def set_speed_scale(self, ss):
 		self.speed_scale = ss
 
 	def set_max_feedrate(self, limit):
-		self.max_feedrate = limit
+		if limit:
+			self.max_feedrate = limit
 
 	def prepare_endswitches(self):
 		self.esw = []

@@ -38,6 +38,7 @@ class GRunner(object):
 		self.temp = None
 		self.btemp = None
 		self.ext_pid = None
+		self.zero_extruder = False
 		while True:
 			try:
 				a = argv.pop(0)
@@ -70,7 +71,9 @@ class GRunner(object):
 			elif a == "-b":
 				self.btemp = float(argv.pop(0))
 			elif a == "-l":
-				self.limit = float(argv.pop(0))
+				self.limit = float(argv.pop(0)) / 60.0
+			elif a == "--no-extrusion":
+				self.zero_extruder = True
 			else:
 				print "Unknown command-line option:", a
 				return
@@ -159,13 +162,19 @@ class GRunner(object):
 		m = Move(self.cfg, None)
 		self.preheat()
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, None)
-		self.sc.set_feedrate(speed)
-		self.sc.set_destination(m.transform(vec))
+		vec1 = m.transform(vec)
+		m.set_feedrate(speed)
+		m.transform_feedrate(vec, vec1)
+		fr1 = m.get_feedrate()
+		self.sc.set_max_feedrate(self.limit)
+		self.sc.set_feedrate(fr1)
+		self.sc.set_destination(vec1)
 		self.scd = StepperClusterDispatcher(self.sc, self)
 		asyncore.loop()
 
 	def run_file(self, fname):
 		g = GCode(self.cfg, fname)
+		g.set_zero_extruder(self.zero_extruder)
 		m = Move(self.cfg, g)
 		self.preheat()
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)

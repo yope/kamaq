@@ -18,7 +18,6 @@ class Move(object):
 	def __init__(self, cfg, gcode):
 		self.mm2steps = [float(x * (1 - int(y) * 2)) for x, y in zip(
 				cfg.settings["steps_per_mm"], cfg.settings["invert_motor"])]
-		print repr(self.mm2steps)
 		self.dim = cfg.settings["num_motors"]
 		self.motor_name = cfg.settings["motor_name"]
 		self.print_volume = cfg.settings["print_volume"]
@@ -29,6 +28,8 @@ class Move(object):
 		if gcode is not None:
 			self.start()
 		self.homing = None
+		self.feedrate = 0.0
+		self.feedrate0 = 0.0
 
 	def start(self):
 		self.movements = self.movement_generator()
@@ -36,6 +37,19 @@ class Move(object):
 	def transform(self, gpos):
 		ret = map(lambda x, y: x * y, gpos, self.mm2steps)
 		return ret
+
+	def _dist(self, vec):
+		return sqrt(sum(map(lambda x: x*x, vec)))
+
+	def set_feedrate(self, fr):
+		self.feedrate = fr
+
+	def get_feedrate(self):
+		return self.feedrate
+
+	def transform_feedrate(self, po, pt):
+		sf = (self._dist(pt) / self._dist(po)) / 80.0
+		self.feedrate *= sf
 
 	def start_homing(self):
 		self.homing = self.homing_generator()
@@ -50,13 +64,13 @@ class Move(object):
 			if i < 2:
 				pos["F"] = 80.0
 			else:
-				pos["F"] = 120.0
+				pos["F"] = 2.0
 			yield pos
 			yield {"command" : "sethome"}
 			if i < 2:
 				pos["F"] = 5.0
 			else:
-				pos["F"] = 60.0
+				pos["F"] = 1.0
 			pos[self.motor_name[i]] = 4
 			yield pos
 			pos[self.motor_name[i]] = -6
@@ -95,8 +109,12 @@ class Move(object):
 					if idx is not None:
 						pos[idx] = obj[w]
 					elif w == "F":
-						yield ("feedrate", obj[w])
+						self.set_feedrate(obj[w])
 				p = self.transform(pos)
+				self.transform_feedrate(pos, p)
+				if self.feedrate != self.feedrate0:
+					self.feedrate0 = self.feedrate
+					yield ("feedrate", self.feedrate)
 				yield ("position", p)
 			elif cmd == "home":
 				self.start_homing()
