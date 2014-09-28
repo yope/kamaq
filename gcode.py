@@ -26,6 +26,10 @@ class GCode(object):
 		self.pos["F"] = 0.0 # Feedrate
 		self.pos["command"] = "position" # Default position command
 		self.commands = self.command_generator()
+		self.zero_extruder = False
+
+	def set_zero_extruder(self, val):
+		self.zero_extruder = val
 
 	def process_M(self, code, args):
 		if code == 82: # Absolute E codes
@@ -44,7 +48,7 @@ class GCode(object):
 		if code == 1 or code == 0: # Controlled movement
 			for w in args:
 				if w == ";":
-					return self.pos
+					break
 				if len(w) < 2:
 					continue
 				mn = w[0]
@@ -58,6 +62,8 @@ class GCode(object):
 					self.pos[mn] = val
 				else:
 					print "G1 unknown code:", w
+			if self.zero_extruder:
+				self.pos["E"] = 0.0
 			return self.pos
 		elif code == 21: # Set metric units
 			pass
