@@ -27,7 +27,6 @@ class Move(object):
 		self.gcode = gcode
 		if gcode is not None:
 			self.start()
-		self.homing = None
 		self.feedrate = 0.0
 		self.feedrate0 = 0.0
 
@@ -51,53 +50,41 @@ class Move(object):
 		sf = (self._dist(pt) / self._dist(po)) / 80.0
 		self.feedrate *= sf
 
-	def start_homing(self):
-		self.homing = self.homing_generator()
-
 	def homing_generator(self):
 		pos = {}
 		pos["command"] = "position"
 		for i in range(3):
-			for m in self.motor_name:
-				pos[m] = 0.0
-			pos[self.motor_name[i]] = -self.print_volume[i]
+			pos = [0] * self.dim
+			pos[i] = -self.print_volume[i]
+			p = self.transform(pos)
 			if i < 2:
-				pos["F"] = 80.0
+				self.set_feedrate(80.0)
 			else:
-				pos["F"] = 2.0
-			yield pos
-			yield {"command" : "sethome"}
+				self.set_feedrate(2.0)
+			self.transform_feedrate(pos, p)
+			yield ("feedrate", self.feedrate)
+			yield ("position", p)
+			yield ("sethome", None)
+			pos[i] = 4
+			p = self.transform(pos)
+			yield ("position", p)
 			if i < 2:
-				pos["F"] = 5.0
+				self.set_feedrate(5.0)
 			else:
-				pos["F"] = 1.0
-			pos[self.motor_name[i]] = 4
-			yield pos
-			pos[self.motor_name[i]] = -6
-			yield pos
-			yield {"command" : "sethome"}
-			if i >= 2:
-				continue
-			pos[self.motor_name[i]] = 4
-			yield pos
-			pos[self.motor_name[i]] = -6
-			yield pos
-			yield {"command" : "sethome"}
+				self.set_feedrate(1.0)
+			pos[i] = -6
+			p = self.transform(pos)
+			self.transform_feedrate(pos, p)
+			yield ("feedrate", self.feedrate)
+			yield ("position", p)
+			yield ("sethome", None)
 
 	def movement_generator(self):
 		while True:
-			if self.homing:
-				gen = self.homing
-			else:
-				gen = self.gcode.commands
 			try:
-				obj = next(gen)
+				obj = next(self.gcode.commands)
 			except StopIteration:
-				if gen == self.homing:
-					self.homing = None
-					continue
-				else:
-					break
+				break
 			if not "command" in obj:
 				print "MOVE: Unknown command object:", repr(obj)
 				continue
@@ -117,7 +104,13 @@ class Move(object):
 					yield ("feedrate", self.feedrate)
 				yield ("position", p)
 			elif cmd == "home":
-				self.start_homing()
+				homing = self.homing_generator()
+				while True:
+					try:
+						cmd = next(homing)
+					except StopIteration:
+						break
+					yield cmd
 			elif cmd == "sethome":
 				yield (cmd, None)
 			elif cmd == "setpoint":
