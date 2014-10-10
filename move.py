@@ -29,6 +29,9 @@ class Move(object):
 			self.start()
 		self.feedrate = 0.0
 		self.feedrate0 = 0.0
+		self.orig_feedrate = 0.0
+		self.last_pos = [0.0] * self.dim
+		self.last_mpos = [0.0] * self.dim
 
 	def start(self):
 		self.movements = self.movement_generator()
@@ -40,15 +43,23 @@ class Move(object):
 	def _dist(self, vec):
 		return sqrt(sum(map(lambda x: x*x, vec)))
 
+	def _sub(self, vec1, vec2):
+		return map(lambda x, y: x - y, vec1, vec2)
+
 	def set_feedrate(self, fr):
 		self.feedrate = fr
+		self.orig_feedrate = fr
 
 	def get_feedrate(self):
 		return self.feedrate
 
 	def transform_feedrate(self, po, pt):
-		sf = (self._dist(pt) / self._dist(po)) / 80.0
-		self.feedrate *= sf
+		dpo = self._dist(po)
+		if dpo:
+			sf = (self._dist(pt) / dpo) / 80.0
+		else:
+			sf = 1.0
+		self.feedrate = sf * self.orig_feedrate
 
 	def homing_generator(self):
 		pos = {}
@@ -98,11 +109,13 @@ class Move(object):
 					elif w == "F":
 						self.set_feedrate(obj[w])
 				p = self.transform(pos)
-				self.transform_feedrate(pos, p)
+				self.transform_feedrate(self._sub(pos, self.last_pos), self._sub(p, self.last_mpos))
 				if self.feedrate != self.feedrate0:
 					self.feedrate0 = self.feedrate
 					yield ("feedrate", self.feedrate)
 				yield ("position", p)
+				self.last_pos = pos
+				self.last_mpos = p
 			elif cmd == "home":
 				homing = self.homing_generator()
 				while True:
