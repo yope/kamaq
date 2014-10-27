@@ -11,7 +11,7 @@ show_help () {
 	echo " -n             : no movements"
 }
 
-while getopts "h?vf:" opt; do
+while getopts "h?snt:" opt; do
     case "$opt" in
     h)
         show_help
