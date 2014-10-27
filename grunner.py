@@ -37,7 +37,7 @@ class GRunner(object):
 		self.speed_scale = 1.0
 		self.temp = None
 		self.btemp = None
-		self.ext_pid = None
+		self.pid = {}
 		self.zero_extruder = False
 		while True:
 			try:
@@ -119,17 +119,15 @@ class GRunner(object):
 		self.shutdown()
 
 	def shutdown(self):
-		if self.ext_pid:
-			self.ext_pid.set_setpoint(0)
-			self.ext_pid.shutdown()
+		for name in self.pid:
+			self.pid[name].set_setpoint(0)
+			self.pid[name].shutdown()
 		if self.sc is not None:
 			self.sc.zero_output()
 			self.sc.zero_output()
 			self.sc.zero_output()
 			self.sc.zero_output()
 			self.sc.close()
-			if self.ext_pid:
-				self.ext_pid.shutdown()
 		sys.exit(0)
 
 	def signal_handler(self, signal, frame):
@@ -137,25 +135,42 @@ class GRunner(object):
 		self.shutdown()
 
 	def preheat(self):
-		if not self.temp:
+		if not self.temp and not self.btemp:
 			return
-		s = ScaledSensor(Config("grunner.conf"), "EXT")
-		t = Thermistor100k(s)
-		o = GPOutput("heater_EXT")
-		self.ext_pid = PidController(t, o, 0.2, 0.002, 0.5)
-		self.ext_pid.spawn()
-		sp = self.temp
-		self.ext_pid.set_setpoint(sp)
-		mtemp = t.read()
-		while mtemp < (sp - 5.0):
-			mtemp = t.read()
-			print "Temp =", mtemp, "setpoint =", sp, "Ouput =", self.ext_pid.get_output()
+		pids = []
+		if self.temp:
+			name = "EXT"
+			s = ScaledSensor(Config("grunner.conf"), name)
+			t = Thermistor100k(s)
+			pids.append((name, self.temp, t))
+		if self.btemp:
+			name = "BED"
+			s = ScaledSensor(Config("grunner.conf"), name)
+			t = Thermistor100k(s)
+			pids.append((name, self.btemp, t))
+		for name, sp, t in pids:
+			o = GPOutput("heater_" + name)
+			self.pid[name] = PidController(t, o, 0.2, 0.002, 0.5)
+			self.pid[name].spawn()
+			self.pid[name].set_setpoint(sp)
+		while True:
+			leave = True
+			for name, sp, t in pids:
+				tmp = t.read()
+				if tmp < (sp - 5.0):
+					leave = False
+				print name+": temp =", tmp, "sp =", sp,
+			print ""
 			time.sleep(1.0)
+			if leave:
+				break
 		# Add some delay here to ensure good heat distribution/melting
 		print "Setpoint reached."
 		for i in range(30):
-			mtemp = t.read()
-			print "Temp =", mtemp, "setpoint =", sp, "Ouput =", self.ext_pid.get_output()
+			for name, sp, t in pids:
+				tmp = t.read()
+				print name+": temp =", tmp, "sp =", sp,
+			print ""
 			time.sleep(1.0)
 
 	def move_to(self, vec, speed):
