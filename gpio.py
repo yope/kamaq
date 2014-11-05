@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 #
+# vim: set tabstop=4:
+#
 # Copyright (c) 2014 David Jander
 #
 # Contains code derived from the Python asyncore library
@@ -9,8 +11,6 @@
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-#
-# vim: set tabstop=4:
 
 import asyncore
 import os
