@@ -140,12 +140,12 @@ class GRunner(object):
 		pids = []
 		if self.temp:
 			name = "EXT"
-			s = ScaledSensor(Config("grunner.conf"), name)
+			s = ScaledSensor(self.cfg, name)
 			t = Thermistor100k(s)
 			pids.append((name, self.temp, t))
 		if self.btemp:
 			name = "BED"
-			s = ScaledSensor(Config("grunner.conf"), name)
+			s = ScaledSensor(self.cfg, name)
 			t = Thermistor100k(s)
 			pids.append((name, self.btemp, t))
 		for name, sp, t in pids:
