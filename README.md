@@ -53,8 +53,8 @@ implementations of popular 7.1 USB audio devices that use this chip.
 Most of the time they will use cheap through-hole electrolytic capacitors,
 that are very easy to short out.
 
-5.2. Current amplifiers
------------------------
+5.2. Audio amplifiers
+---------------------
 
 Bipolar 2-phase stepper-motors are best driven by a controlled current.
 Although in theory, having a good model of the motor that takes into account
@@ -62,10 +62,13 @@ inductance and back-EMF at different speeds, one could calculate the correct
 voltage-waveform to be applied to the motor windings and just use a voltage-
 amplifier wich might be a little easier to build (specially when using class-D
 amplifier IC's).
-In my case I preferred to build very simple class-B amplifiers with current-
-feedback based on a bunch of TDA2030A I had laying around, so I have not
-included support for motor-modelling of any kind in order to support voltage-
-amplifiers. If you think this is a cool idea, feel free to contribute ;-)
+For my first hardware implementation, I built very simple class-B amplifiers
+with current-feedback based on a bunch of TDA2030A I had laying around. This
+version didn't require any motor modeling.
+The second version which I am currently using is based on class-D audio
+amplifiers IC's, which save a lot of space and simplify the power supply
+enormously. The class-D amplifiers lack current-feedback though, so I am
+starting to add software support for voltage control also.
 
 5.3. Heater control
 -------------------
