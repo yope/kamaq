@@ -20,6 +20,7 @@ class Config(object):
 			"max_feedrate" : "6000",
 			"steps_per_mm" : "[80, 80, 4260, 670]",
 			"invert_motor" : "[True, False, False, True]",
+			"current_feedback" : 'False',
 			"print_volume" : "[200, 200, 200]",
 			"sound_device" : "'Device'",
 			"sound_rate" : "48000",

@@ -18,6 +18,11 @@ class StepperCluster(object):
 		self.cfg = cfg
 		self.invert = [1 - int(x) for x in cfg.settings["invert_motor"]]
 		self.audio = audiostep(audiodev, dim)
+		cfb = self.cfg.settings["current_feedback"]
+		if cfb:
+			self.audio.set_amplitude_dc(1.0)
+		else:
+			self.audio.set_amplitude_dc(0.6)
 		self.dim = dim
 		self.prepare_endswitches()
 		self.speed_scale = 1.0

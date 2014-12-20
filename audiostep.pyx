@@ -29,6 +29,7 @@ cdef extern from "audiodev.h":
 	void cancel_destination()
 	double *get_position()
 	void set_position(double *v)
+	void set_amplitude_dc(double amp)
 
 cdef class audiostep:
 	cdef int handle
@@ -112,3 +113,6 @@ cdef class audiostep:
 		for i in range(MAX_DIM * 2):
 			self.current[i] = c[i]
 		set_constant_level(self.current)
+
+	def set_amplitude_dc(self, amp):
+		set_amplitude_dc(amp)

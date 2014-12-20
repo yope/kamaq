@@ -18,5 +18,6 @@ void restart_audio(void);
 void cancel_destination(void);
 double *get_position(void);
 void set_position(double *v);
+void set_amplitude_dc(double amp);
 
 #endif

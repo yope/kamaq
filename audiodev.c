@@ -21,6 +21,7 @@
 #define STEP_PERIOD_SIZE (4 * MICROSTEPS)
 #define CURR_OFFSET 0.0
 #define CURR_AMPLITUDE 30000.0
+#define AMPLITUDE_DC_DEFAULT 0.6 /* Amplitude multiplier for constant current */
 
 static snd_pcm_t *playback_handle = NULL;
 static unsigned int dim = 0;
@@ -29,6 +30,7 @@ static double position[MAX_DIM];
 static double origin[MAX_DIM];
 static double destination[MAX_DIM];
 static double incvec[MAX_DIM];
+static double amp[MAX_DIM];
 static int16_t buf[PERIODSIZE * MAX_DIM * 4]; /* Make buf hold twice a period */
 unsigned int buf_idx = 0;
 static double tim;
@@ -37,6 +39,7 @@ static double delta_t;
 static double feedrate = 0.33;
 static double feedrate_begin = 0.05;
 static double feedrate_end = 0.05;
+static double amplitude_dc = AMPLITUDE_DC_DEFAULT;
 
 double sintab[STEP_PERIOD_SIZE], costab[STEP_PERIOD_SIZE];
 int angle[MAX_DIM];
@@ -173,6 +176,7 @@ int audiostep_open(const char *devname, int channels, unsigned int rate)
 	vec_clear(speed);
 	vec_clear(destination);
 	vec_clear(origin);
+	vec_clear(amp);
 	for (i = 0; i < MAX_DIM * 2; i ++) {
 		currents[i] = 0.0;
 	}
@@ -215,11 +219,16 @@ void set_destination(double *v)
 	dist = vec_dist(position, v);
 	if(dist == 0.0) {
 		vec_clear(incvec);
+		for(i = 0; i < MAX_DIM; i++)
+			amp[i] = amplitude_dc;
 		return;
 	}
 	vec_diff(dif, v, origin);
 	for(i = 0; i < MAX_DIM; i++) {
 		incvec[i] = dif[i] / dist;
+		amp[i] = amplitude_dc + fabs(incvec[i]) * 0.5;
+		if (amp[i] > 1.0)
+			amp[i] = 1.0;
 	}
 }
 
@@ -293,8 +302,8 @@ static void motor_do_steps(int i, int s, double *vl, double *vr)
 
 	/* TODO: X-fade to square wave for high-speed */
 
-	*vl = sintab[angle[i]];
-	*vr = costab[angle[i]];
+	*vl = sintab[angle[i]] * amp[i];
+	*vr = costab[angle[i]] * amp[i];
 }
 
 /* Returns:
@@ -316,9 +325,7 @@ int main_iteration(void)
 
 	pos_iteration(steps);
 	for (i = 0; i < MAX_DIM; i ++) {
-		if (steps[i]) {
-			motor_do_steps(i, steps[i], &currents[i * 2], &currents[i * 2 + 1]);
-		}
+		motor_do_steps(i, steps[i], &currents[i * 2], &currents[i * 2 + 1]);
 	}
 	repsf = (1.0 / delta_t) + repserr;
 	reps = (int)repsf;
@@ -414,4 +421,9 @@ double *get_position(void)
 void set_position(double *v)
 {
 	vec_copy(position, v);
+}
+
+void set_amplitude_dc(double amp)
+{
+	amplitude_dc = amp;
 }
