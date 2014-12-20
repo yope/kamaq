@@ -17,6 +17,10 @@ class Thermistor100k(object):
 				3.043, 2.298, 1.758, 1.360, 1.064, 0.8414, 0.6714, 0.5408,
 				0.4393, 0.3597, 0.2969, 0.2468, 0.2065, 0.1740, 0.1475,
 				0.1258, 0.1079, 0.09305, 0.08065]
+
+	R1 = 1000.0
+	R2 = 1000.0
+	VCC = 5.16
 	def __init__(self, sensor):
 		self.sensor = sensor
 
@@ -24,7 +28,7 @@ class Thermistor100k(object):
 		vs = self.sensor.read()
 		if vs <= 0.0:
 			vs = 0.0001
-		r = (5.0 * 1000.0) / vs - 2000.0
+		r = (self.VCC * self.R1) / vs - self.R1 - self.R2
 		if r < 0.001:
 			r = 0.001
 		return r
@@ -46,7 +50,7 @@ class Thermistor100k(object):
 if __name__ == "__main__":
 	from hwmon import ScaledSensor
 	from config import Config
-	s = ScaledSensor(Config("grunner.conf"), "EXT")
+	s = ScaledSensor(Config("grunner.conf"), "BED")
 	t = Thermistor100k(s)
 	print t.read(), "deg. Celsius"
 
