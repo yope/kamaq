@@ -17,7 +17,7 @@ class Config(object):
 		defaults = {
 			"num_motors" : "4",
 			"motor_name" : "['X', 'Y', 'Z', 'E']",
-			"max_feedrate" : "6000",
+			"max_feedrate" : "5000",
 			"steps_per_mm" : "[80, 80, 4260, 670]",
 			"invert_motor" : "[True, False, False, True]",
 			"current_feedback" : 'False',
