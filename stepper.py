@@ -16,7 +16,7 @@ class StepperCluster(object):
 	def __init__(self, audiodev, dim, cfg, move):
 		self.move = move
 		self.cfg = cfg
-		self.invert = [1 - int(x) for x in cfg.settings["invert_motor"]]
+		self.invert = [1 - int(x) * 2 for x in cfg.settings["invert_motor"]]
 		self.audio = audiostep(audiodev, dim)
 		cfb = self.cfg.settings["current_feedback"]
 		if cfb:
