@@ -32,7 +32,7 @@ class GRunner(object):
 		self.audiodev = self.cfg.settings["sound_device"]
 		cmd = None
 		vec = [0.0 for x in range(self.dim)]
-		speed = 3600.0 / 60.0
+		speed = 3600.0
 		self.limit = None
 		self.speed_scale = 1.0
 		self.temp = None
@@ -60,7 +60,7 @@ class GRunner(object):
 			elif a == "-e":
 				vec[3] = float(argv.pop(0))
 			elif a == "-f":
-				speed = float(argv.pop(0)) / 60.0
+				speed = float(argv.pop(0))
 			elif a == "-h" or a == "--help":
 				self.print_help()
 				return
@@ -175,18 +175,12 @@ class GRunner(object):
 			time.sleep(1.0)
 
 	def move_to(self, vec, speed):
-		m = Move(self.cfg, None)
-		self.preheat()
-		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, None)
-		vec1 = m.transform(vec)
-		m.set_feedrate(speed)
-		m.transform_feedrate(vec, vec1)
-		fr1 = m.get_feedrate()
-		self.sc.set_max_feedrate(self.limit)
-		self.sc.set_feedrate(fr1)
-		self.sc.set_destination(vec1)
-		self.scd = StepperClusterDispatcher(self.sc, self)
-		asyncore.loop()
+		cmd = "G1 "
+		for v, n in zip(vec, ["X", "Y", "Z", "E"]):
+			cmd += n + str(v) + " "
+		cmd += "F" + str(speed) + " "
+		f = StringIO(cmd + "\n")
+		return self.run_file(f)
 
 	def run_file(self, fname):
 		g = GCode(self.cfg, fname)
