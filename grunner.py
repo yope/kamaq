@@ -113,6 +113,7 @@ class GRunner(object):
 		print "\nOptions for command -i:"
 		print " -s <factor>       : Speed scale factor (default 1.0)"
 		print " -l <limit>        : Set feedrate limit"
+		print " --no-extrusion    : Do not move extruder"
 
 	def end_of_file(self):
 		print "EOF"
