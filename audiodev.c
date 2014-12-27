@@ -191,22 +191,16 @@ out_free:
 	return err;
 }
 
-#if 0
-void write_buf(void)
+static void calc_amplitude(void)
 {
 	int i;
-	int err;
 
-	for (i = 0; i < 10; ++i) {
-		if ((err = snd_pcm_writei (playback_handle, buf, 128)) != 128) {
-			fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
-			exit(1);
-		}
+	for(i = 0; i < MAX_DIM; i++) {
+		amp[i] = amplitude_dc + fabs(incvec[i]) * delta_t * 10.0;
+		if (amp[i] > 1.0)
+			amp[i] = 1.0;
 	}
-	snd_pcm_close (playback_handle);
-	exit (0);
 }
-#endif
 
 void set_destination(double *v)
 {
@@ -224,12 +218,9 @@ void set_destination(double *v)
 		return;
 	}
 	vec_diff(dif, v, origin);
-	for(i = 0; i < MAX_DIM; i++) {
+	for(i = 0; i < MAX_DIM; i++)
 		incvec[i] = dif[i] / dist;
-		amp[i] = amplitude_dc + fabs(incvec[i]) * 0.5;
-		if (amp[i] > 1.0)
-			amp[i] = 1.0;
-	}
+	calc_amplitude();
 }
 
 void next_position(int *steps)
@@ -324,6 +315,7 @@ int main_iteration(void)
 		return -1;
 
 	pos_iteration(steps);
+	calc_amplitude();
 	for (i = 0; i < MAX_DIM; i ++) {
 		motor_do_steps(i, steps[i], &currents[i * 2], &currents[i * 2 + 1]);
 	}
