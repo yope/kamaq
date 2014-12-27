@@ -22,7 +22,7 @@ class StepperCluster(object):
 		if cfb:
 			self.audio.set_amplitude_dc(1.0)
 		else:
-			self.audio.set_amplitude_dc(0.6)
+			self.audio.set_amplitude_dc(0.3)
 		self.dim = dim
 		self.prepare_endswitches()
 		self.speed_scale = 1.0
