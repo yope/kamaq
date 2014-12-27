@@ -66,7 +66,7 @@ For my first hardware implementation, I built very simple class-B amplifiers
 with current-feedback based on a bunch of TDA2030A I had laying around. This
 version didn't require any motor modeling.
 The second version which I am currently using is based on class-D audio
-amplifiers IC's, which save a lot of space and simplify the power supply
+amplifier IC's, which save a lot of space and simplify the power supply
 enormously. The class-D amplifiers lack current-feedback though, so I am
 starting to add software support for voltage control also.
 
