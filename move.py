@@ -71,7 +71,7 @@ class Move(object):
 			if i < 2:
 				self.set_feedrate(80.0)
 			else:
-				self.set_feedrate(2.0)
+				self.set_feedrate(1.0)
 			self.transform_feedrate(pos, p)
 			yield ("feedrate", self.feedrate)
 			yield ("position", p)
@@ -82,7 +82,7 @@ class Move(object):
 			if i < 2:
 				self.set_feedrate(5.0)
 			else:
-				self.set_feedrate(1.0)
+				self.set_feedrate(0.5)
 			pos[i] = -6
 			p = self.transform(pos)
 			self.transform_feedrate(pos, p)
