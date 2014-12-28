@@ -41,5 +41,5 @@ class ScaledSensor(object):
 if __name__ == "__main__":
 	from config import Config
 	s = ScaledSensor(Config("grunner.conf"), "EXT")
-	print repr(s.read())
+	print(repr(s.read()))
 

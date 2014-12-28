@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # vim: set tabstop=4:
 #
@@ -22,7 +22,7 @@ import sys
 import signal
 import asyncore
 import time
-from cStringIO import StringIO
+from io import StringIO
 
 class GRunner(object):
 	def __init__(self, argv):
@@ -75,48 +75,48 @@ class GRunner(object):
 			elif a == "--no-extrusion":
 				self.zero_extruder = True
 			else:
-				print "Unknown command-line option:", a
+				print("Unknown command-line option:", a)
 				return
 		signal.signal(signal.SIGINT, self.signal_handler)
 		if cmd == None:
 			return
 		elif cmd == "-i":
-			print "Executing G-Code file:", fname
+			print("Executing G-Code file:", fname)
 			self.run_file(fname)
 		elif cmd == "-g":
-			print "Executing single movement to:", repr(vec), "at speed:", speed
+			print("Executing single movement to:", repr(vec), "at speed:", speed)
 			self.move_to(vec, speed)
 		elif cmd == "-H":
 			self.homing()
 		else:
-			print "Error: Unimplemented command:", cmd
+			print("Error: Unimplemented command:", cmd)
 		return
 
 	def print_help(self):
 		name = sys.argv[0]
-		print "%s: G-Code runner" % (name)
-		print "Syntax:"
-		print "   %s [-i <filename>|-g|-H] [options]\n" % (name)
-		print "Commands:"
-		print " -i <filename>     : Execute all G-codes from file <filename>"
-		print " -g                : Process one move"
-		print " -H                : Home position"
-		print "\nCommon options:"
-		print " -t <temp>         : Set extruder temperature"
-		print " -b <temp>         : Set heated bed temperature"
-		print "\nOptions for command -g:"
-		print " -x <num>          : Move to X-coordinate <num> in millimeters (default 0)"
-		print " -y <num>          : Y-coordinate"
-		print " -z <num>          : Z-coordinate"
-		print " -e <num>          : Extruder movement"
-		print " -f <speed>        : Feedrate in mm/minute"
-		print "\nOptions for command -i:"
-		print " -s <factor>       : Speed scale factor (default 1.0)"
-		print " -l <limit>        : Set feedrate limit"
-		print " --no-extrusion    : Do not move extruder"
+		print("%s: G-Code runner" % (name))
+		print("Syntax:")
+		print("   %s [-i <filename>|-g|-H] [options]\n" % (name))
+		print("Commands:")
+		print(" -i <filename>     : Execute all G-codes from file <filename>")
+		print(" -g                : Process one move")
+		print(" -H                : Home position")
+		print("\nCommon options:")
+		print(" -t <temp>         : Set extruder temperature")
+		print(" -b <temp>         : Set heated bed temperature")
+		print("\nOptions for command -g:")
+		print(" -x <num>          : Move to X-coordinate <num> in millimeters (default 0)")
+		print(" -y <num>          : Y-coordinate")
+		print(" -z <num>          : Z-coordinate")
+		print(" -e <num>          : Extruder movement")
+		print(" -f <speed>        : Feedrate in mm/minute")
+		print("\nOptions for command -i:")
+		print(" -s <factor>       : Speed scale factor (default 1.0)")
+		print(" -l <limit>        : Set feedrate limit")
+		print(" --no-extrusion    : Do not move extruder")
 
 	def end_of_file(self):
-		print "EOF"
+		print("EOF")
 		self.shutdown()
 
 	def shutdown(self):
@@ -160,18 +160,18 @@ class GRunner(object):
 				tmp = t.read()
 				if tmp < (sp - 3.0):
 					leave = False
-				print name+": temp =", tmp, "sp =", sp,
-			print ""
+				print(name+": temp =", tmp, "sp =", sp, end=' ')
+			print("")
 			time.sleep(1.0)
 			if leave:
 				break
 		# Add some delay here to ensure good heat distribution/melting
-		print "Setpoint reached."
+		print("Setpoint reached.")
 		for i in range(30):
 			for name, sp, t in pids:
 				tmp = t.read()
-				print name+": temp =", tmp, "sp =", sp,
-			print ""
+				print(name+": temp =", tmp, "sp =", sp, end=' ')
+			print("")
 			time.sleep(1.0)
 
 	def move_to(self, vec, speed):

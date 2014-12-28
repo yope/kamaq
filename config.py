@@ -10,7 +10,7 @@
 
 from math import *
 import sys
-import ConfigParser
+import configparser
 
 class Config(object):
 	def __init__(self, cfgfilename):
@@ -32,7 +32,7 @@ class Config(object):
 			"temp_bed_offset" : "-0.005",
 			"temp_ext_offset" : "-0.005",
 		}
-		self.config = ConfigParser.SafeConfigParser(defaults)
+		self.config = configparser.SafeConfigParser(defaults)
 		self.config.read([cfgfilename])
 		# self.config.write(sys.stdout)
 		self.settings = self.config.defaults()

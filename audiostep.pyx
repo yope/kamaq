@@ -38,7 +38,8 @@ cdef class audiostep:
 	def __init__(self, name, channels=4):
 		cdef int ret
 		pcmname = "surround71:CARD=" + name + ",DEV=0"
-		ret = audiostep_open(pcmname, channels, 48000)
+		bname = pcmname.encode("iso8859-1")
+		ret = audiostep_open(bname, channels, 48000)
 		self.pos = <double *>malloc(MAX_DIM * cython.sizeof(double))
 		self.current = <double *>malloc(MAX_DIM * 2 * cython.sizeof(double))
 		if self.pos is NULL:

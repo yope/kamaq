@@ -37,14 +37,14 @@ class Move(object):
 		self.movements = self.movement_generator()
 
 	def transform(self, gpos):
-		ret = map(lambda x, y: x * y, gpos, self.mm2steps)
+		ret = list(map(lambda x, y: x * y, gpos, self.mm2steps))
 		return ret
 
 	def _dist(self, vec):
-		return sqrt(sum(map(lambda x: x*x, vec)))
+		return sqrt(sum([x*x for x in vec]))
 
 	def _sub(self, vec1, vec2):
-		return map(lambda x, y: x - y, vec1, vec2)
+		return list(map(lambda x, y: x - y, vec1, vec2))
 
 	def set_feedrate(self, fr):
 		self.feedrate = fr
@@ -100,7 +100,7 @@ class Move(object):
 			except StopIteration:
 				break
 			if not "command" in obj:
-				print "MOVE: Unknown command object:", repr(obj)
+				print("MOVE: Unknown command object:", repr(obj))
 				continue
 			cmd = obj["command"]
 			if cmd == "position":

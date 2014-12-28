@@ -25,7 +25,7 @@ def asyncore_poll_with_except(timeout=0.0, map=None):
 		map = socket_map
 	if map:
 		r = []; w = []; e = []
-		for fd, obj in map.items():
+		for fd, obj in list(map.items()):
 			is_r = obj.readable()
 			is_w = obj.writable()
 			is_e = obj.exceptable()
@@ -41,7 +41,7 @@ def asyncore_poll_with_except(timeout=0.0, map=None):
 
 		try:
 			r, w, e = select.select(r, w, e, timeout)
-		except select.error, err:
+		except select.error as err:
 			if err.args[0] != EINTR:
 				raise
 			else:
@@ -75,7 +75,8 @@ class GPIOBase(object):
 
 	def _write_sys(self, fname, val):
 		f = open(fname, "wb")
-		f.write(str(val) + "\n")
+		val = str(val) + "\n"
+		f.write(val.encode("iso8859-1"))
 		f.close()
 
 class AsyncGPInput(asyncore.file_dispatcher, GPIOBase):
@@ -114,7 +115,7 @@ class AsyncGPInput(asyncore.file_dispatcher, GPIOBase):
 
 	def read_value(self):
 		os.lseek(self.gpio_fd, 0, os.SEEK_SET)
-		txt = os.read(self.gpio_fd, 2).strip(" \r\n")
+		txt = os.read(self.gpio_fd, 2).strip(b" \r\n")
 		return int(txt)
 
 	def handle_expt(self):
@@ -149,7 +150,7 @@ if __name__ == "__main__":
 			self.val = True
 
 		def gpio_event(self, name, val):
-			print "GPIO Event from", name, "value:", val
+			print("GPIO Event from", name, "value:", val)
 			self.gpo.set_output(self.val)
 			self.val = not self.val
 

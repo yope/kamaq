@@ -36,12 +36,12 @@ class GCode(object):
 			pass
 		elif code == 104: # Set hotend temperature
 			val = float(args[0][1:])
-			print "Set temperature:", val, "deg. C"
+			print("Set temperature:", val, "deg. C")
 			return {"command": "setpoint", "type": "hotend", "value": val}
 		elif code == 106: # Set extruder fan speed
-			print "Set extruder fan speed:", args[0]
+			print("Set extruder fan speed:", args[0])
 		else:
-			print "Unimplemented M: code =", code, repr(args)
+			print("Unimplemented M: code =", code, repr(args))
 		return None
 
 	def process_G(self, code, args):
@@ -61,30 +61,30 @@ class GCode(object):
 						val = val / 60
 					self.pos[mn] = val
 				else:
-					print "G1 unknown code:", w
+					print("G1 unknown code:", w)
 			if self.zero_extruder:
 				self.pos["E"] = 0.0
 			return self.pos
 		elif code == 21: # Set metric units
 			pass
 		elif code == 28: # Home position
-			print "Home position"
+			print("Home position")
 			return {"command": "home"}
 		elif code == 90: # Absolute positioning
-			print "Set Home and absolute positioning"
+			print("Set Home and absolute positioning")
 			return {"command": "sethome"}
 		elif code == 92: # Set home
 			# TODO: Implement home offsetting
 			pass
 		else:
-			print "Unimplemented G: code =", code, repr(args)
+			print("Unimplemented G: code =", code, repr(args))
 		return None
 
 	def process_T(self, code, args):
 		if code == 0: # Tool selection 0
 			pass
 		else:
-			print "Unimplemented T: code =", code, repr(args)
+			print("Unimplemented T: code =", code, repr(args))
 
 	def process_line(self, cmd, l):
 		words = l.split()
@@ -104,7 +104,7 @@ class GCode(object):
 		for l in self.f:
 			cmd = l[0]
 			if cmd == ";":
-				print l.strip(" \r\n")
+				print(l.strip(" \r\n"))
 			if not cmd in ['G', 'M', 'T']:
 				continue
 			ret = self.process_line(cmd, l[1:].strip(" \r\n"))

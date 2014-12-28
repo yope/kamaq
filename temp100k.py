@@ -52,5 +52,5 @@ if __name__ == "__main__":
 	from config import Config
 	s = ScaledSensor(Config("grunner.conf"), "BED")
 	t = Thermistor100k(s)
-	print t.read(), "deg. Celsius"
+	print(t.read(), "deg. Celsius")
 

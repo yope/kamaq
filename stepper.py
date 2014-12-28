@@ -42,7 +42,7 @@ class StepperCluster(object):
 			self.esw.append(AsyncGPInput(eswname, self))
 
 	def gpio_event(self, name, val):
-		print "GPIO Event from", name, "value:", val
+		print("GPIO Event from", name, "value:", val)
 		self.stop()
 		self.cancel_destination()
 		self.restart()
@@ -64,10 +64,10 @@ class StepperCluster(object):
 			#print "Position:", repr(pos)
 			self.set_destination(pos)
 		elif cmd == "sethome":
-			print "Setting home pos:", repr(self.audio.get_position())
+			print("Setting home pos:", repr(self.audio.get_position()))
 			self.audio.set_home()
 		else:
-			print "SC: Unknown object:", repr(obj)
+			print("SC: Unknown object:", repr(obj))
 		return True
 
 	def main_iteration(self):

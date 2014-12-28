@@ -11,19 +11,19 @@
 
 import time
 import multiprocessing
-import Queue
+import queue
 
 def PidProcess(pid, cmdqueue):
 	cmd = ""
-	print "PID: Starting", pid.actuator.name, "..."
+	print("PID: Starting", pid.actuator.name, "...")
 	while True:
 		while not cmdqueue.empty():
 			try:
 				obj = cmdqueue.get()
-			except Queue.Empty:
+			except queue.Empty:
 				break
 			if not "command" in obj:
-				print "PID: Unknown command object:", repr(obj)
+				print("PID: Unknown command object:", repr(obj))
 				continue
 			cmd = obj["command"]
 			if cmd == "setpoint":
@@ -31,12 +31,12 @@ def PidProcess(pid, cmdqueue):
 			elif cmd == "shutdown":
 				break
 			else:
-				print "PID: Unsupported command:", cmd
+				print("PID: Unsupported command:", cmd)
 		if cmd == "shutdown":
 			break
 		if not pid.iteration():
 			break
-	print "PID: Shutting down", pid.actuator.name, "..."
+	print("PID: Shutting down", pid.actuator.name, "...")
 
 class PidController(object):
 	def __init__(self, sensor, actuator, P, I, D, period=1.0):
@@ -47,7 +47,7 @@ class PidController(object):
 		self.D = D / period
 		self.integ = 0.0
 		self.setpoint = 0
-		self.errq = Queue.Queue()
+		self.errq = queue.Queue()
 		self.err0 = 0.0
 		self.output = 0.0
 		self.period = period
@@ -67,17 +67,17 @@ class PidController(object):
 
 	def validate_sensor(self, current):
 		if current < 10.0:
-			print "Temperature too low!"
+			print("Temperature too low!")
 			return None
 		if current > 300.0:
-			print "Temperature too high!"
+			print("Temperature too high!")
 			return None
 		prev = self.validate_previous
 		if prev is None:
 			self.validate_previous = current
 			return current
 		if abs(prev - current) > 20.0:
-			print "Temperature sensor unstable!"
+			print("Temperature sensor unstable!")
 			return None
 		self.validate_previous = current
 		return current
@@ -86,7 +86,7 @@ class PidController(object):
 		current = self.sensor.read()
 		current = self.validate_sensor(current)
 		if current is None:
-			print "Temperature sensor failure detected. Shutting down heater!"
+			print("Temperature sensor failure detected. Shutting down heater!")
 			self.actuator.set_output(0)
 			self.outvalue.value = 0
 			return False
@@ -150,7 +150,7 @@ if __name__ == "__main__":
 	sp = 230.0
 	p.set_setpoint(sp)
 	while True:
-		print "Temp =", t.read(), "setpoint =", sp, "Ouput =", p.get_output()
+		print("Temp =", t.read(), "setpoint =", sp, "Ouput =", p.get_output())
 		time.sleep(1.0)
 	p.shutdown()
 
