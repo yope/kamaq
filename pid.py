@@ -34,7 +34,8 @@ def PidProcess(pid, cmdqueue):
 				print "PID: Unsupported command:", cmd
 		if cmd == "shutdown":
 			break
-		pid.iteration()
+		if not pid.iteration():
+			break
 	print "PID: Shutting down", pid.actuator.name, "..."
 
 class PidController(object):
@@ -56,6 +57,7 @@ class PidController(object):
 		self.proc = multiprocessing.Process(target=PidProcess,
 							args=(self, self.cmdqueue))
 		self.spawned = False
+		self.validate_previous = None
 
 	def set_setpoint(self, sp):
 		if self.spawned:
@@ -63,8 +65,32 @@ class PidController(object):
 		else:
 			self.setpoint = sp
 
+	def validate_sensor(self, current):
+		if current < 10.0:
+			print "Temperature too low!"
+			return None
+		if current > 300.0:
+			print "Temperature too high!"
+			return None
+		prev = self.validate_previous
+		if prev is None:
+			self.validate_previous = current
+			return current
+		if abs(prev - current) > 20.0:
+			print "Temperature sensor unstable!"
+			return None
+		self.validate_previous = current
+		return current
+
 	def iteration(self):
-		err = self.setpoint - self.sensor.read()
+		current = self.sensor.read()
+		current = self.validate_sensor(current)
+		if current is None:
+			print "Temperature sensor failure detected. Shutting down heater!"
+			self.actuator.set_output(0)
+			self.outvalue.value = 0
+			return False
+		err = self.setpoint - current
 		derr = err - self.err0
 		self.errq.put(err)
 		if self.errq.qsize() < 3:
@@ -89,6 +115,7 @@ class PidController(object):
 			self.actuator.set_output(0)
 			time.sleep(self.period - ontime)
 		self.outvalue.value = self.output
+		return True
 
 	def get_output(self):
 		return self.outvalue.value
