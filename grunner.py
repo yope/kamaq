@@ -151,14 +151,14 @@ class GRunner(object):
 			pids.append((name, self.btemp, t))
 		for name, sp, t in pids:
 			o = GPOutput("heater_" + name)
-			self.pid[name] = PidController(t, o, 0.2, 0.002, 0.5)
+			self.pid[name] = PidController(t, o, 0.3, 0.004, 0.5)
 			self.pid[name].spawn()
 			self.pid[name].set_setpoint(sp)
 		while True:
 			leave = True
 			for name, sp, t in pids:
 				tmp = t.read()
-				if tmp < (sp - 5.0):
+				if tmp < (sp - 3.0):
 					leave = False
 				print name+": temp =", tmp, "sp =", sp,
 			print ""
