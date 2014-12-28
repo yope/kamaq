@@ -102,3 +102,22 @@ simple and straight-forward stuff right now hacked together in very little time.
    coils. If less than 8 values (for 4 motors) are specified, the rest is
    assumed to be 0.
 
+ * adjust_bed.sh: A script that aids in adjusting the for corners of the print-
+   bed.
+
+ * clean_extruder.sh: Move to a suitable position (high enough Z), heat
+   extruder and start extruding a few cm.
+
+7. TODO:
+--------
+
+Features that may or may not be implemented in the near or far future:
+
+ * Implement web-interface for control and progress monitoring.
+ * Implement maximum-acceleration based speed limiting, interpolatig movements.
+ * Implement pause and resume-from-layer-X.
+ * Port the code to Python 3.4+ with asyncio (needs exception support in
+   asyncio).
+ * Implemet G-code control via SSH or Serial port (to be able to use traditional
+   printer control software).
+
