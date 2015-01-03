@@ -1,6 +1,5 @@
 #!/bin/sh
 
-./grunner.py -g -x 10 -y 10 -z 1 -f 1000
 ./grunner.py -H
 echo "Adjust screw height and press ENTER"
 read a
