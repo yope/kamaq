@@ -36,7 +36,6 @@ done
 shift $((OPTIND-1))
 
 if [ $MOVE -eq 1 ]; then
-	./grunner.py -g -x 10 -y 10 -z 5 -f 5000
 	./grunner.py -H
 	./grunner.py -g -x 50 -y 50 -z 30 -f 5000
 fi
