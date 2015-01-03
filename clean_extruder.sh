@@ -12,19 +12,23 @@ show_help () {
 	echo " -n             : no movements"
 }
 BED=""
-while getopts "h?snt:" opt; do
+while getopts "h?snt:b:" opt; do
     case "$opt" in
     h)
         show_help
         exit 0
         ;;
-    n) MOVE=0
+    n)
+	MOVE=0
         ;;
-    t) TEMP=$OPTARG
+    t)
+	TEMP=$OPTARG
         ;;
-    b) BED="-b $OPTARG"
+    b)
+	BED="-b $OPTARG"
 	;;
-    s) SHORT=1
+    s)
+	SHORT=1
 	;;
     esac
 done
