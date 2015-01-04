@@ -117,7 +117,7 @@ Features that may or may not be implemented in the near or far future:
  * Implement maximum-acceleration based speed limiting, interpolatig movements.
  * Implement pause and resume-from-layer-X.
  * Port the code to Python 3.4+ with asyncio (needs exception support in
-   asyncio).
+   asyncio) (DONE!)
  * Implemet G-code control via SSH or Serial port (to be able to use traditional
    printer control software).
 
