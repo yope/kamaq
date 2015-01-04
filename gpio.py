@@ -4,68 +4,18 @@
 #
 # Copyright (c) 2014 David Jander
 #
-# Contains code derived from the Python asyncore library
-# Copyright 1996 by Sam Rushing
-#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
 
-import asyncore
+import monkeypatch
+import asyncio
 import os
-import select
+import selectors
 import time
 
 GPIO_PATH = "gpios"
-
-# New poll function for asyncore with excepption-only mode:
-def asyncore_poll_with_except(timeout=0.0, map=None):
-	if map is None:
-		map = socket_map
-	if map:
-		r = []; w = []; e = []
-		for fd, obj in list(map.items()):
-			is_r = obj.readable()
-			is_w = obj.writable()
-			is_e = obj.exceptable()
-			if is_r:
-				r.append(fd)
-			if is_w:
-				w.append(fd)
-			if is_e:
-				e.append(fd)
-		if [] == r == w == e:
-			time.sleep(timeout)
-			return
-
-		try:
-			r, w, e = select.select(r, w, e, timeout)
-		except select.error as err:
-			if err.args[0] != EINTR:
-				raise
-			else:
-				return
-
-		for fd in r:
-			obj = map.get(fd)
-			if obj is None:
-				continue
-			asyncore.read(obj)
-
-		for fd in w:
-			obj = map.get(fd)
-			if obj is None:
-				continue
-			asyncore.write(obj)
-
-		for fd in e:
-			obj = map.get(fd)
-			if obj is None:
-				continue
-			asyncore._exception(obj)
-
-asyncore.poll = asyncore_poll_with_except
 
 class GPIOBase(object):
 	def __init__(self, name):
@@ -79,7 +29,7 @@ class GPIOBase(object):
 		f.write(val.encode("iso8859-1"))
 		f.close()
 
-class AsyncGPInput(asyncore.file_dispatcher, GPIOBase):
+class AsyncGPInput(GPIOBase):
 	def __init__(self, name, callback, edge="falling", debounce=0.01):
 		GPIOBase.__init__(self, name)
 		self.edge = edge
@@ -87,7 +37,8 @@ class AsyncGPInput(asyncore.file_dispatcher, GPIOBase):
 		self.debounce = debounce
 		self.callback = callback
 		self.gpio_open(name)
-		asyncore.file_dispatcher.__init__(self, self.gpio_fd)
+		self.loop = asyncio.get_event_loop()
+		self.loop.add_excepter(self.gpio_fd, self.handle_expt)
 
 	def gpio_open(self, name):
 		gpioedge = os.path.join(self.gpiodir, "edge")
@@ -155,5 +106,5 @@ if __name__ == "__main__":
 			self.val = not self.val
 
 	cb = cbtest("endstop_X", "heater_EXT")
-	asyncore.loop()
+	asyncio.get_event_loop().run_forever()
 

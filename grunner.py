@@ -9,6 +9,7 @@
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
 
+import monkeypatch
 from config import Config
 from gcode import GCode
 from stepper import StepperCluster, StepperClusterDispatcher
@@ -20,7 +21,7 @@ from gpio import GPOutput
 from pid import PidController
 import sys
 import signal
-import asyncore
+import asyncio
 import time
 from io import StringIO
 
@@ -191,7 +192,7 @@ class GRunner(object):
 		self.sc.set_speed_scale(self.speed_scale)
 		self.sc.set_max_feedrate(self.limit)
 		self.scd = StepperClusterDispatcher(self.sc, self)
-		asyncore.loop()
+		asyncio.get_event_loop().run_forever()
 
 	def homing(self):
 		f = StringIO("G28\n")

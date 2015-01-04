@@ -8,9 +8,10 @@
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
 
+import monkeypatch
+import asyncio
 from audiostep import audiostep
 from gpio import AsyncGPInput
-import asyncore
 
 class StepperCluster(object):
 	def __init__(self, audiodev, dim, cfg, move):
@@ -125,20 +126,12 @@ class StepperCluster(object):
 		self.zero_output()
 		self.close()
 
-class StepperClusterDispatcher(asyncore.file_dispatcher):
+class StepperClusterDispatcher(object):
 	def __init__(self, stepper_cluster, callback):
 		self.sc = stepper_cluster
 		self.cb = callback
-		asyncore.file_dispatcher.__init__(self, self.sc.fileno())
-
-	def writable(self):
-		return True
-
-	def readable(self):
-		return False
-
-	def exceptable(self):
-		return False
+		self.loop = asyncio.get_event_loop()
+		self.loop.add_writer(self.sc.fileno(), self.handle_write)
 
 	def handle_write(self):
 		ret = self.sc.write_more()
