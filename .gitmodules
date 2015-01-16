@@ -1,0 +1,6 @@
+[submodule "aiohttp"]
+	path = aiohttp
+	url = https://github.com/KeepSafe/aiohttp.git
+[submodule "websockets"]
+	path = websockets
+	url = https://github.com/aaugustin/websockets.git

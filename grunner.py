@@ -14,11 +14,9 @@ from config import Config
 from gcode import GCode
 from stepper import StepperCluster, StepperClusterDispatcher
 from move import Move
-from temp100k import Thermistor100k
-from hwmon import ScaledSensor
 from config import Config
-from gpio import GPOutput
-from pid import PidController
+from printer import Printer
+from webui import WebUi
 import sys
 import signal
 import asyncio
@@ -40,6 +38,8 @@ class GRunner(object):
 		self.btemp = None
 		self.pid = {}
 		self.zero_extruder = False
+		self.printer = Printer(self.cfg)
+		self.webui = None
 		while True:
 			try:
 				a = argv.pop(0)
@@ -73,6 +73,8 @@ class GRunner(object):
 				self.btemp = float(argv.pop(0))
 			elif a == "-l":
 				self.limit = float(argv.pop(0)) / 60.0
+			elif a == "-w":
+				self.webui = WebUi(self.printer)
 			elif a == "--no-extrusion":
 				self.zero_extruder = True
 			else:
@@ -89,9 +91,13 @@ class GRunner(object):
 			self.move_to(vec, speed)
 		elif cmd == "-H":
 			self.homing()
+			if not self.webui:
+				self.shutdown()
+				return
 		else:
 			print("Error: Unimplemented command:", cmd)
-		return
+			return
+		asyncio.get_event_loop().run_forever()
 
 	def print_help(self):
 		name = sys.argv[0]
@@ -105,6 +111,7 @@ class GRunner(object):
 		print("\nCommon options:")
 		print(" -t <temp>         : Set extruder temperature")
 		print(" -b <temp>         : Set heated bed temperature")
+		print(" -w                : Launch web interface")
 		print("\nOptions for command -g:")
 		print(" -x <num>          : Move to X-coordinate <num> in millimeters (default 0)")
 		print(" -y <num>          : Y-coordinate")
@@ -118,12 +125,11 @@ class GRunner(object):
 
 	def end_of_file(self):
 		print("EOF")
-		self.shutdown()
+		if not self.webui:
+			self.shutdown()
 
 	def shutdown(self):
-		for name in self.pid:
-			self.pid[name].set_setpoint(0)
-			self.pid[name].shutdown()
+		self.printer.shutdown()
 		if self.sc is not None:
 			self.sc.zero_output()
 			self.sc.zero_output()
@@ -141,24 +147,15 @@ class GRunner(object):
 			return
 		pids = []
 		if self.temp:
-			name = "EXT"
-			s = ScaledSensor(self.cfg, name)
-			t = Thermistor100k(s)
-			pids.append((name, self.temp, t))
+			pids.append(("bed", self.temp))
 		if self.btemp:
-			name = "BED"
-			s = ScaledSensor(self.cfg, name)
-			t = Thermistor100k(s)
-			pids.append((name, self.btemp, t))
-		for name, sp, t in pids:
-			o = GPOutput("heater_" + name)
-			self.pid[name] = PidController(t, o, 0.3, 0.004, 0.5)
-			self.pid[name].spawn()
-			self.pid[name].set_setpoint(sp)
+			pids.append(("ext", self.btemp))
+		for name, sp in pids:
+			self.printer.launch_pid(name, sp)
 		while True:
 			leave = True
-			for name, sp, t in pids:
-				tmp = t.read()
+			for name, sp in pids:
+				tmp = self.printer.get_temperature(name)
 				if tmp < (sp - 3.0):
 					leave = False
 				print(name+": temp =", tmp, "sp =", sp, end=' ')
@@ -169,8 +166,8 @@ class GRunner(object):
 		# Add some delay here to ensure good heat distribution/melting
 		print("Setpoint reached.")
 		for i in range(30):
-			for name, sp, t in pids:
-				tmp = t.read()
+			for name, sp in pids:
+				tmp = self.printer.get_temperature(name)
 				print(name+": temp =", tmp, "sp =", sp, end=' ')
 			print("")
 			time.sleep(1.0)
@@ -181,7 +178,7 @@ class GRunner(object):
 			cmd += n + str(v) + " "
 		cmd += "F" + str(speed) + " "
 		f = StringIO(cmd + "\n")
-		return self.run_file(f)
+		self.run_file(f)
 
 	def run_file(self, fname):
 		g = GCode(self.cfg, fname)
@@ -192,7 +189,6 @@ class GRunner(object):
 		self.sc.set_speed_scale(self.speed_scale)
 		self.sc.set_max_feedrate(self.limit)
 		self.scd = StepperClusterDispatcher(self.sc, self)
-		asyncio.get_event_loop().run_forever()
 
 	def homing(self):
 		f = StringIO("G28\n")

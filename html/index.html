@@ -1,0 +1,76 @@
+<html>
+<!-- vim: set tabstop=4:shiftwidth=4 -->
+<head>
+	<title>G-Runner</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<script src="/js/wscomm.js"></script>
+	<script src="/js/ui.js"></script>
+<script>
+window.onload = function() {
+	UIInit();
+	WSInit();
+};
+</script>
+<style>
+.maindiv {
+	width: 45%;
+    padding: 10px;
+    border: 5px solid #c0c0ff;
+    margin: 5px;
+	float: left;
+	min-height: 300;
+	max-height: 40%;
+}
+
+.plot {
+	width: 100%;
+	height: 85%;
+}
+
+#canvas_mov {
+	width: 200px;
+	height: 200px;
+}
+
+</style>
+</head>
+<body>
+<h1>G-runner</h1>
+
+<div id="tabbar"><div id="tab_main">Status</div></div>
+
+<div id="div_control" class="maindiv">
+	<div id="div_mov_title">
+		Control
+	</div>
+</div>
+
+<div id="div_mov" class="maindiv">
+	<div id="div_mov_title">
+		Movements
+	</div>
+	<div id="div_mov_graph">
+		<canvas id="canvas_mov"></canvas>
+	</div>
+</div>
+
+<div id="div_t_ext" class="maindiv">
+	<div id="div_t_ext_title">
+		Extruder temperature
+	</div>
+	<div id="div_t_ext_graph">
+		<canvas id="canvas_t_ext" class="plot"></canvas>
+	</div>
+</div>
+
+<div id="div_t_bed" class="maindiv">
+	<div id="div_t_bed_title">
+		Print bed temperature
+	</div>
+	<div id="div_t_bed_graph">
+		<canvas id="canvas_t_bed" class="plot"></canvas>
+	</div>
+</div>
+
+</body>
+</html>
