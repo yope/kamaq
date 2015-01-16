@@ -359,16 +359,9 @@ int push_more_audio_data(void)
 
 void zero_output(void)
 {
-	int i, err;
-
-	memset(buf, 0, sizeof(buf));
-	for(i = 0; i < 4; i ++) {
-		if ((err = snd_pcm_writei(playback_handle, buf, PERIODSIZE)) != PERIODSIZE) {
-			fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
-			return;
-		}
-	}
-	buf_idx = 0;
+	double current[] = {0.0, 0.0, 0.0, 0.0,
+			    0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	set_constant_level(current);
 }
 
 void set_constant_level(double *c)
