@@ -61,10 +61,10 @@ class Move(object):
 			sf = 1.0
 		self.feedrate = sf * self.orig_feedrate
 
-	def homing_generator(self):
+	def homing_generator(self, axes):
 		pos = {}
 		pos["command"] = "position"
-		for i in range(3):
+		for i in axes:
 			pos = [0] * self.dim
 			pos[i] = -self.print_volume[i]
 			p = self.transform(pos)
@@ -120,7 +120,14 @@ class Move(object):
 				self.last_pos = pos
 				self.last_mpos = p
 			elif cmd == "home":
-				homing = self.homing_generator()
+				axes = []
+				for w in obj:
+					idx = self.motor_name_indexes.get(w, None)
+					if idx is not None:
+						axes.append(idx)
+				if not axes:
+					axes = range(3)
+				homing = self.homing_generator(axes)
 				while True:
 					try:
 						cmd = next(homing)
@@ -128,7 +135,13 @@ class Move(object):
 						break
 					yield cmd
 			elif cmd == "sethome":
-				yield (cmd, None)
+				pos = [p for p in self.last_pos]
+				for w in obj:
+					idx = self.motor_name_indexes.get(w, None)
+					if idx is not None:
+						pos[idx] = obj[w]
+				p = self.transform(pos)
+				yield (cmd, p)
 			elif cmd == "setpoint":
 				pass
 		raise StopIteration
