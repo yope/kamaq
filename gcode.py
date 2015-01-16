@@ -46,22 +46,14 @@ class GCode(object):
 
 	def process_G(self, code, args):
 		if code == 1 or code == 0: # Controlled movement
-			for w in args:
-				if w == ";":
-					break
-				if len(w) < 2:
-					continue
-				mn = w[0]
-				try:
-					val = float(w[1:])
-				except ValueError:
-					continue
-				if mn in self.pos:
-					if mn == "F":
+			for code in args:
+				val = args[code]
+				if code in self.pos:
+					if code == "F":
 						val = val / 60
-					self.pos[mn] = val
+					self.pos[code] = val
 				else:
-					print("G1 unknown code:", w)
+					print("G1 unknown code:", code)
 			if self.zero_extruder:
 				self.pos["E"] = 0.0
 			return self.pos
@@ -93,12 +85,23 @@ class GCode(object):
 		except ValueError:
 			return None
 		words = words[1:]
+		args = {}
+		for w in words:
+			if w[0] == ";":
+				break
+			if w[0] in ["X", "Y", "Z", "E", "F", "S", "P", "R"]:
+				snum = w[1:]
+				if "." in snum:
+					num = float(snum)
+				else:
+					num = int(snum)
+				args[w[0]] = num
 		if cmd == "G":
-			return self.process_G(code, words)
+			return self.process_G(code, args)
 		elif cmd == "M":
-			return self.process_M(code, words)
+			return self.process_M(code, args)
 		elif cmd == "T":
-			return self.process_T(code, words)
+			return self.process_T(code, args)
 
 	def command_generator(self):
 		for l in self.f:
