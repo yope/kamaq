@@ -36,9 +36,8 @@ class AsyncGPInput(GPIOBase):
 		self.expt_ti = 0
 		self.debounce = debounce
 		self.callback = callback
-		self.gpio_open(name)
 		self.loop = asyncio.get_event_loop()
-		self.loop.add_excepter(self.gpio_fd, self.handle_expt)
+		self.gpio_open(name)
 
 	def gpio_open(self, name):
 		gpioedge = os.path.join(self.gpiodir, "edge")
@@ -47,22 +46,14 @@ class AsyncGPInput(GPIOBase):
 		self.enable_exceptions()
 
 	def gpio_close(self):
+		self.disable_exceptions()
 		os.close(self.gpio_fd)
 
-	def writable(self):
-		return False
-
-	def readable(self):
-		return False
-
-	def exceptable(self):
-		return self.enabled
-
 	def enable_exceptions(self):
-		self.enabled = True
+		self.loop.add_excepter(self.gpio_fd, self.handle_expt)
 
 	def disable_exceptions(self):
-		self.enabled = True
+		self.loop.remove_excepter(self.gpio_fd)
 
 	def read_value(self):
 		os.lseek(self.gpio_fd, 0, os.SEEK_SET)
