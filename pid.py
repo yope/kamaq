@@ -120,6 +120,9 @@ class PidController(object):
 	def get_output(self):
 		return self.outvalue.value
 
+	def get_input(self):
+		return self.sensor.read()
+
 	def spawn(self):
 		self.proc.start()
 		self.spawned = True
