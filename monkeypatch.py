@@ -23,6 +23,7 @@
 
 import selectors
 import select
+import math
 
 from selectors import EVENT_READ, EVENT_WRITE
 EVENT_EXCEPT = (1 << 2)
