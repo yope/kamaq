@@ -130,10 +130,14 @@ class StepperClusterDispatcher(object):
 	def __init__(self, stepper_cluster, callback):
 		self.sc = stepper_cluster
 		self.cb = callback
+		self.idle = False
 		self.loop = asyncio.get_event_loop()
 		self.loop.add_writer(self.sc.fileno(), self.handle_write)
 
 	def handle_write(self):
+		if self.idle:
+			self.sc.zero_output()
+			return
 		ret = self.sc.write_more()
 		while ret is None:
 			ret = self.sc.get_next_destination()
@@ -142,4 +146,5 @@ class StepperClusterDispatcher(object):
 			if ret:
 				ret = self.sc.write_more()
 		if not ret:
-			self.cb.end_of_file()
+			self.cb.end_of_file() # Exits if webui not running
+			self.idle = True
