@@ -35,11 +35,11 @@ class GCode(object):
 		if code == 82: # Absolute E codes
 			pass
 		elif code == 104: # Set hotend temperature
-			val = float(args[0][1:])
+			val = float(args['S'])
 			print("Set temperature:", val, "deg. C")
 			return {"command": "setpoint", "type": "hotend", "value": val}
 		elif code == 106: # Set extruder fan speed
-			print("Set extruder fan speed:", args[0])
+			print("Set extruder fan speed:", args.get("S", 0))
 		else:
 			print("Unimplemented M: code =", code, repr(args))
 		return None
