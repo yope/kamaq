@@ -12,14 +12,24 @@ window.onload = function() {
 };
 </script>
 <style>
+.graphdiv {
+	width: 45%;
+    padding: 2px;
+    border: 2px solid #c0c0ff;
+    margin: 2px;
+	float: left;
+	min-height: 200;
+	max-height: 40%;
+}
+
 .maindiv {
 	width: 45%;
-    padding: 10px;
-    border: 5px solid #c0c0ff;
-    margin: 5px;
+    padding: 2px;
+    border: 2px solid #c0c0ff;
+    margin: 2px;
 	float: left;
-	min-height: 300;
-	max-height: 40%;
+	min-height: 380;
+	max-height: 70%;
 }
 
 .plot {
@@ -28,8 +38,8 @@ window.onload = function() {
 }
 
 #canvas_mov {
-	width: 200px;
-	height: 200px;
+	width: 400px;
+	height: 380px;
 }
 
 </style>
@@ -46,15 +56,12 @@ window.onload = function() {
 </div>
 
 <div id="div_mov" class="maindiv">
-	<div id="div_mov_title">
-		Movements
-	</div>
 	<div id="div_mov_graph">
 		<canvas id="canvas_mov"></canvas>
 	</div>
 </div>
 
-<div id="div_t_ext" class="maindiv">
+<div id="div_t_ext" class="graphdiv">
 	<div id="div_t_ext_title">
 		Extruder temperature
 	</div>
@@ -63,7 +70,7 @@ window.onload = function() {
 	</div>
 </div>
 
-<div id="div_t_bed" class="maindiv">
+<div id="div_t_bed" class="graphdiv">
 	<div id="div_t_bed_title">
 		Print bed temperature
 	</div>

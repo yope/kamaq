@@ -6,21 +6,69 @@ var plotdata_t_ext = [20, 25, 30, 34, 38, 41, 44, 47, 50],
 	plotdata_t_bed = [20, 20, 20, 20, 21, 21, 21, 22, 22],
 	plotdata_mov = [[0, 0], [40, 40], [50, 40]];
 
-var actual_z = 0;
+var actual_z = 0, actual_e = 0, actual_layer = 0;
 
 function draw_axes(id, ymin, ymax)
 {
 	var canvas = document.getElementById(id);
+	var div;
+	var divs = [1, 2, 5, 10, 20, 50];
+	var rng = ymax - ymin;
+	var i, dist;
+	var yrng = canvas.height - 10;
+	var y;
+
 	if (null==canvas || !canvas.getContext) return;
+
+	for (i = 0; i < divs.length; i ++) {
+		div = divs[i];
+		if ((rng / div) <= 10)
+			break;
+	}
+	dist = rng / div;
+	log("div = "+String(div)+" dist = " + String(dist));
 
 	ctx=canvas.getContext("2d");
 	ctx.beginPath();
 	ctx.strokeStyle = "rgb(128, 128, 128)";
-	ctx.moveTo(20, 0);
-	ctx.lineTo(20, canvas.height);
-	ctx.moveTo(0, canvas.height - 20);
-	ctx.lineTo(canvas.width, canvas.height - 20);
+	ctx.moveTo(10, 10);
+	ctx.lineTo(10, canvas.height);
+	ctx.moveTo(10, canvas.height - 10);
+	ctx.lineTo(canvas.width, canvas.height - 10);
+	i = ymin;
+	while (i < ymax) {
+		y = yrng - ((i - ymin) * yrng) / rng;
+		ctx.fillText(String(i), 0, y)
+		ctx.moveTo(10, y);
+		ctx.lineTo(canvas.width, y);
+		i += div;
+	}
 	ctx.stroke();
+}
+
+var mov_canvas_w = 0, mov_canvas_h = 0;
+
+function clear_movements(id)
+{
+	var canvas = document.getElementById(id);
+
+	if (null==canvas || !canvas.getContext) return;
+
+	ctx=canvas.getContext("2d");
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function fade_movements(id)
+{
+	var canvas = document.getElementById(id);
+
+	if (null==canvas || !canvas.getContext) return;
+
+	ctx=canvas.getContext("2d");
+	ctx.fillStyle="white";
+	ctx.globalAlpha=0.5;
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	ctx.globalAlpha=1.0;
 }
 
 function draw_movements(id, data)
@@ -28,32 +76,59 @@ function draw_movements(id, data)
 	var canvas = document.getElementById(id);
 	var i, h;
 	var len = data.length;
+	var mag = 2.0;
+	var t0 = 1;
+	var x, y;
+	var greycomp = "0";
+	var redraw = false;
+	var startidx = len - 2;
 
 	if (null==canvas || !canvas.getContext) return;
 
 	/* Set canvas pixel size */
-	canvas.width = canvas.clientWidth;
-	canvas.height = canvas.clientHeight;
-	log("Canvas (mov) :" + String(canvas.width) + " x " + String(canvas.height));
+	if (canvas.width != canvas.clientWidth) {
+		canvas.width = canvas.clientWidth;
+		redraw = true;
+	}
+	if (canvas.height != canvas.clientHeight) {
+		canvas.height = canvas.clientHeight;
+		redraw = true;
+	}
 	h = canvas.height - 5;
 
 	ctx=canvas.getContext("2d");
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	if (redraw) {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		startidx = 0;
+	}
 	ctx.beginPath();
 	ctx.strokeStyle = "rgb(128, 128, 128)";
-	ctx.rect(0, h - 185, 195, h);
+	ctx.rect(5, 5, 185 * mag, 195 * mag);
 	ctx.stroke();
 	ctx.beginPath();
-	ctx.strokeStyle = "rgb(0, 128, 255)";
-	p = data[0];
-	ctx.moveTo(p[0], h - p[1]);
-	for (i = 1; i < len; i ++) {
+	ctx.strokeStyle = "rgb(" + greycomp +", 128, 255)";
+	p = data[startidx];
+	x = p[0] * mag;
+	y = h - p[1] * mag;
+	ctx.moveTo(x, y);
+	for (i = startidx + 1; i < len; i ++) {
 		p = data[i];
-		ctx.lineTo(p[0], h - p[1]);
+		if (p[3] != t0) {
+			t0 = p[3];
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(x, y);
+			if (t0 == 0)
+				ctx.strokeStyle = "rgb(255, 128, "+greycomp+")";
+			else
+				ctx.strokeStyle = "rgb("+greycomp+", 128, 255)";
+		}
+		x = p[0] * mag;
+		y = h - p[1] * mag;
+		ctx.lineTo(x, y);
 	}
 	ctx.stroke();
 }
-
 
 function draw_plot(id, data)
 {
@@ -68,7 +143,6 @@ function draw_plot(id, data)
 	/* Set canvas pixel size */
 	canvas.width = canvas.clientWidth;
 	canvas.height = canvas.clientHeight;
-	log("Canvas :" + String(canvas.width) + " x " + String(canvas.height));
 
 	for (i = 0; i < len; i ++) {
 		if (data[i] > ymax)
@@ -79,19 +153,19 @@ function draw_plot(id, data)
 	ymin = Math.floor(ymin / 10) * 10;
 	ymax = Math.ceil(ymax / 10) * 10;
 	yrange = ymax - ymin;
-	ypltrange = canvas.height - 20;
-	xpltrange = canvas.width - 20;
+	ypltrange = canvas.height - 10;
+	xpltrange = canvas.width - 10;
 	draw_axes(id, ymin, ymax);
 	ctx=canvas.getContext("2d");
 	ctx.beginPath();
 	ctx.strokeStyle = "rgb(255, 0, 0)";
 	for (i = 0; i < (len - 1); i ++) {
-		var x1 = 20 + (i * xpltrange) / (len - 1);
-		var x2 = 20 + ((i + 1) * xpltrange) / (len - 1);
+		var x1 = 10 + (i * xpltrange) / (len - 1);
+		var x2 = 10 + ((i + 1) * xpltrange) / (len - 1);
 		if (i == 0) {
-			ctx.moveTo(x1, ypltrange - (data[i] * ypltrange) / yrange);
+			ctx.moveTo(x1, ypltrange - ((data[i] - ymin) * ypltrange) / yrange);
 		}
-		ctx.lineTo(x2, ypltrange - (data[i + 1] * ypltrange) / yrange);
+		ctx.lineTo(x2, ypltrange - ((data[i + 1] - ymin) * ypltrange) / yrange);
 	}
 	ctx.stroke();
 }
@@ -101,9 +175,10 @@ function add_plot_data(data, x, reset)
 	if (reset) {
 		data.length = 0;
 		log("plot reset");
+		fade_movements("canvas_mov");
 	}
 	data.push(x);
-	if (data.length >= 3600) {
+	if (data.length >= 1800) {
 		data.shift();
 	}
 }

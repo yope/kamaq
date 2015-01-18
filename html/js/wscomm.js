@@ -24,11 +24,18 @@ function WSParseMove(obj)
 {
 	var p = [obj.x, obj.y];
 	var reset = false;
+	var type = 1;
 
 	if (obj.z != actual_z) {
 		actual_z = obj.z;
 		reset = true;
 	}
+	if (obj.e <= actual_e) {
+		log("Type 0");
+		type = 0;
+	}
+	actual_e = obj.e;
+	var p = [obj.x, obj.y, obj.z, type];
 	add_plot_data(plotdata_mov, p, reset);
 	draw_movements("canvas_mov", plotdata_mov);
 }
@@ -38,7 +45,7 @@ function WSHandler(txt)
 	var obj = JSON.parse(txt.data);
 	var id = obj.id;
 
-	log(txt.data);
+	// log(txt.data);
 
 	switch(id) {
 	case "status":
