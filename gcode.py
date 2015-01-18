@@ -94,10 +94,13 @@ class GCode(object):
 				break
 			if w[0] in ["X", "Y", "Z", "E", "F", "S", "P", "R"]:
 				snum = w[1:]
-				if "." in snum:
-					num = float(snum)
-				else:
-					num = int(snum)
+				try:
+					if "." in snum:
+						num = float(snum)
+					else:
+						num = int(snum)
+				except ValueError:
+					num = w
 				args[w[0]] = num
 		if cmd == "G":
 			return self.process_G(code, args)
