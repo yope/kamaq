@@ -75,12 +75,14 @@ class GRunner(object):
 				self.limit = float(argv.pop(0)) / 60.0
 			elif a == "-w":
 				self.webui = WebUi(self.printer)
+				self.printer.add_webui(self.webui)
 			elif a == "--no-extrusion":
 				self.zero_extruder = True
 			else:
 				print("Unknown command-line option:", a)
 				return
 		signal.signal(signal.SIGINT, self.signal_handler)
+		self.loop = asyncio.get_event_loop()
 		if cmd == None:
 			return
 		elif cmd == "-i":
@@ -91,13 +93,10 @@ class GRunner(object):
 			self.move_to(vec, speed)
 		elif cmd == "-H":
 			self.homing()
-			if not self.webui:
-				self.shutdown()
-				return
 		else:
 			print("Error: Unimplemented command:", cmd)
 			return
-		asyncio.get_event_loop().run_forever()
+		self.loop.run_forever()
 
 	def print_help(self):
 		name = sys.argv[0]
@@ -147,9 +146,9 @@ class GRunner(object):
 			return
 		pids = []
 		if self.temp:
-			pids.append(("bed", self.temp))
+			pids.append(("ext", self.temp))
 		if self.btemp:
-			pids.append(("ext", self.btemp))
+			pids.append(("bed", self.btemp))
 		for name, sp in pids:
 			self.printer.launch_pid(name, sp)
 		while True:
