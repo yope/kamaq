@@ -159,7 +159,7 @@ class GRunner(object):
 					leave = False
 				print(name+": temp =", tmp, "sp =", sp, end=' ')
 			print("")
-			time.sleep(1.0)
+			self.loop.run_until_complete(asyncio.sleep(1))
 			if leave:
 				break
 		# Add some delay here to ensure good heat distribution/melting
@@ -169,7 +169,7 @@ class GRunner(object):
 				tmp = self.printer.get_temperature(name)
 				print(name+": temp =", tmp, "sp =", sp, end=' ')
 			print("")
-			time.sleep(1.0)
+			self.loop.run_until_complete(asyncio.sleep(1))
 
 	def move_to(self, vec, speed):
 		cmd = "G1 "
