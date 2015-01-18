@@ -61,13 +61,16 @@ class GCode(object):
 			pass
 		elif code == 28: # Home position
 			print("Home position")
-			return {"command": "home"}.update(args)
+			ret = {"command": "home"}
+			ret.update(args)
+			return ret
 		elif code == 90: # Absolute positioning
 			print("Set Home and absolute positioning")
 			return {"command": "sethome"}
 		elif code == 92: # Set home
-			return {"command": "sethome"}.update(args)
-			pass
+			ret = {"command": "home"}
+			ret.update(args)
+			return ret
 		else:
 			print("Unimplemented G: code =", code, repr(args))
 		return None
