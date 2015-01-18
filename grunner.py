@@ -182,7 +182,7 @@ class GRunner(object):
 	def run_file(self, fname):
 		g = GCode(self.cfg, fname)
 		g.set_zero_extruder(self.zero_extruder)
-		m = Move(self.cfg, g)
+		m = Move(self.cfg, g, self.printer)
 		self.preheat()
 		self.sc = StepperCluster(self.audiodev, self.dim, self.cfg, m)
 		self.sc.set_speed_scale(self.speed_scale)

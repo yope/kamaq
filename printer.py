@@ -17,6 +17,7 @@ from pid import PidController
 class Printer(object):
 	def __init__(self, cfg):
 		self.cfg = cfg
+		self.webui = None
 		self.pid = {}
 		for n in ["ext", "bed"]:
 			name = n.upper()
@@ -24,6 +25,9 @@ class Printer(object):
 			s = ScaledSensor(self.cfg, name)
 			t = Thermistor100k(s)
 			self.pid[n] = PidController(t, o, 0.3, 0.004, 0.5)
+
+	def add_webui(self, webui):
+		self.webui = webui
 
 	def launch_pid(self, name, sp):
 		self.pid[name].spawn()
@@ -39,3 +43,7 @@ class Printer(object):
 
 	def get_temperature(self, name):
 		return self.pid[name].get_input()
+
+	def set_position_mm(self, x, y, z, e):
+		if self.webui:
+			self.webui.queue_move(x, y, z, e)

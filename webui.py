@@ -118,7 +118,7 @@ class WebUi(object):
 			if random.randrange(100) > 97:
 				z += 0.2
 			if z > 20.0: z = 0
-			self.queue({"id": "move", "x": x, "y": y, "z": z})
+			self.queue_move(x, y, z, 0)
 
 	@asyncio.coroutine
 	def coro_status(self):
@@ -154,6 +154,9 @@ class WebUi(object):
 	def queue(self, obj):
 		for ws in self.wsockets:
 			ws.queue_message(obj)
+
+	def queue_move(self, x, y, z, e):
+		self.queue({"id": "move", "x": x, "y": y, "z": z, "e": e})
 
 # Test function
 if __name__ == "__main__":

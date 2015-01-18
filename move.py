@@ -15,7 +15,7 @@ import signal
 import sys
 
 class Move(object):
-	def __init__(self, cfg, gcode):
+	def __init__(self, cfg, gcode, printer):
 		self.mm2steps = [float(x * (1 - int(y) * 2)) for x, y in zip(
 				cfg.settings["steps_per_mm"], cfg.settings["invert_motor"])]
 		self.dim = cfg.settings["num_motors"]
@@ -24,6 +24,7 @@ class Move(object):
 		self.motor_name_indexes = {}
 		for i in range(len(self.motor_name)):
 			self.motor_name_indexes[self.motor_name[i]] = i
+		self.printer = printer
 		self.gcode = gcode
 		if gcode is not None:
 			self.start()
@@ -111,6 +112,7 @@ class Move(object):
 						pos[idx] = obj[w]
 					elif w == "F":
 						self.set_feedrate(obj[w])
+				self.printer.set_position_mm(*pos)
 				p = self.transform(pos)
 				self.transform_feedrate(self._sub(pos, self.last_pos), self._sub(p, self.last_mpos))
 				if self.feedrate != self.feedrate0:
