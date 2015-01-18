@@ -66,7 +66,10 @@ class StepperCluster(object):
 			self.set_destination(pos)
 		elif cmd == "sethome":
 			print("Setting home pos:", repr(pos))
-			self.audio.set_position(pos)
+			if pos is None:
+				self.audio.set_home()
+			else:
+				self.audio.set_position(pos)
 		else:
 			print("SC: Unknown object:", repr(obj))
 		return True
