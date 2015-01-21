@@ -112,7 +112,7 @@ int audiostep_open(const char *devname, int channels, unsigned int rate)
 	int dir = 0;
 	int i;
 	snd_pcm_uframes_t periods = PERIODSIZE;
-	snd_pcm_uframes_t bufsize = PERIODSIZE * 8;
+	snd_pcm_uframes_t bufsize = PERIODSIZE * 4;
 
 	dim = channels;
 
@@ -257,6 +257,21 @@ void set_speed(double *speed)
 	/* TODO */
 }
 
+static int write_pcm_data(void)
+{
+	int err, i;
+
+	for (i = 0; i < 3; i ++) {
+		err = snd_pcm_writei(playback_handle, buf, PERIODSIZE);
+		if (err == PERIODSIZE)
+			break;
+		fprintf(stderr, "audio write retry (%s)\n", snd_strerror (err));
+		snd_pcm_prepare(playback_handle);
+	}
+
+	return err;
+}
+
 static int write_current_reps(double *c, int reps)
 {
 	int i, t;
@@ -270,9 +285,9 @@ static int write_current_reps(double *c, int reps)
 		if (buf_idx < (sizeof(buf) - dim * 2))
 			buf_idx += dim * 2;
 		if(buf_idx >= (PERIODSIZE * dim * 2)) {
-			if ((err = snd_pcm_writei(playback_handle, buf, PERIODSIZE)) != PERIODSIZE) {
+			err = write_pcm_data();
+			if (err != PERIODSIZE) {
 				fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
-				snd_pcm_prepare(playback_handle);
 			} else {
 				ret += err;
 				buf_idx -= (PERIODSIZE * dim * 2);
