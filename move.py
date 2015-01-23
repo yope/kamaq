@@ -70,7 +70,7 @@ class Move(object):
 			pos[i] = -self.print_volume[i]
 			p = self.transform(pos)
 			if i < 2:
-				self.set_feedrate(80.0)
+				self.set_feedrate(50.0)
 			else:
 				self.set_feedrate(1.5)
 			self.transform_feedrate(pos, p)
@@ -84,7 +84,7 @@ class Move(object):
 			p = self.transform(pos)
 			yield ("position", p)
 			if i < 2:
-				self.set_feedrate(5.0)
+				self.set_feedrate(4.0)
 			else:
 				self.set_feedrate(1.0)
 			pos[i] = -6
