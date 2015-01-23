@@ -54,6 +54,7 @@ class PidController(object):
 		self.windup_limit = 100.0
 		self.cmdqueue = multiprocessing.Queue()
 		self.outvalue = multiprocessing.Value('d')
+		self.invalue = multiprocessing.Value('d')
 		self.proc = multiprocessing.Process(target=PidProcess,
 							args=(self, self.cmdqueue))
 		self.spawned = False
@@ -84,6 +85,7 @@ class PidController(object):
 
 	def iteration(self):
 		current = self.sensor.read()
+		self.invalue.value = current
 		current = self.validate_sensor(current)
 		if current is None:
 			print("Temperature sensor failure detected. Shutting down heater!")
@@ -121,7 +123,7 @@ class PidController(object):
 		return self.outvalue.value
 
 	def get_input(self):
-		return self.sensor.read()
+		return self.invalue.value
 
 	def spawn(self):
 		self.proc.start()
