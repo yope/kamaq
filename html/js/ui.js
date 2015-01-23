@@ -2,9 +2,9 @@
  * vim: set tabstop=4:shiftwidth=4
  */
 
-var plotdata_t_ext = [20, 25, 30, 34, 38, 41, 44, 47, 50],
-	plotdata_t_bed = [20, 20, 20, 20, 21, 21, 21, 22, 22],
-	plotdata_mov = [[0, 0], [40, 40], [50, 40]];
+var plotdata_t_ext = [220, 225],
+	plotdata_t_bed = [95, 96],
+	plotdata_mov = [[0, 0], [40, 40]];
 
 var actual_z = 0, actual_e = 0, actual_layer = 0;
 
@@ -135,7 +135,7 @@ function draw_plot(id, data)
 	var canvas = document.getElementById(id);
 	var i;
 	var len = data.length;
-	var ymin = 20, ymax = 100,
+	var ymin = 100, ymax = 150,
 		yrange, ypltrange, xpltrange;
 
 	if (null==canvas || !canvas.getContext) return;
