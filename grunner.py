@@ -12,7 +12,7 @@
 import monkeypatch
 from config import Config
 from gcode import GCode
-from stepper import StepperCluster, StepperClusterDispatcher
+from stepper import StepperCluster
 from move import Move
 from config import Config
 from printer import Printer
