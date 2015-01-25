@@ -38,7 +38,6 @@ class GRunner(object):
 		self.btemp = None
 		self.pid = {}
 		self.zero_extruder = False
-		#self.printer = Printer(self.cfg)
 		self.webui = None
 		while True:
 			try:
@@ -143,7 +142,6 @@ class GRunner(object):
 		self.loop = asyncio.get_event_loop()
 		sc = StepperCluster(self.audiodev, self.dim, self.cfg)
 		self.printer = Printer(self.cfg, sc)
-		#scd = StepperClusterDispatcher(self.sc, self.printer)
 		self.webui = WebUi(self.printer)
 		self.printer.add_webui(self.webui)
 		self.printer.run()
@@ -183,6 +181,8 @@ class GRunner(object):
 			self.loop.run_until_complete(asyncio.sleep(1))
 
 	def move_to(self, vec, speed):
+		print("Currently not supported. Use the web interface!")
+		return
 		cmd = "G1 "
 		for v, n in zip(vec, ["X", "Y", "Z", "E"]):
 			cmd += n + str(v) + " "
@@ -191,6 +191,8 @@ class GRunner(object):
 		self.run_file(f)
 
 	def run_file(self, fname):
+		print("Currently not supported. Use the web interface!")
+		return
 		g = GCode(self.cfg, fname)
 		g.set_zero_extruder(self.zero_extruder)
 		m = Move(self.cfg, g, self.printer)
