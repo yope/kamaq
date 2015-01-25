@@ -22,6 +22,7 @@ class GCode(object):
 		self.pos["F"] = 0.0 # Feedrate
 		self.pos["command"] = "position" # Default position command
 		self.set_zero_extruder(False)
+		self.relative_mode = False
 
 	def set_zero_extruder(self, val):
 		self.zero_extruder = val
@@ -46,7 +47,10 @@ class GCode(object):
 				if code in self.pos:
 					if code == "F":
 						val = val / 60
-					self.pos[code] = val
+					if self.relative_mode and code in ['X', 'Y', 'Z', 'E']:
+						self.pos[code] += val
+					else:
+						self.pos[code] = val
 				else:
 					print("G1 unknown code:", code)
 			if self.zero_extruder:
@@ -60,8 +64,11 @@ class GCode(object):
 			ret.update(args)
 			return ret
 		elif code == 90: # Absolute positioning
-			print("Set Home and absolute positioning")
-			return {"command": "sethome"}
+			print("Set absolute positioning")
+			self.relative_mode = False
+		elif code == 91: # Relative positioning
+			print("Set relative positioning")
+			self.relative_mode = True
 		elif code == 92: # Set home
 			ret = {"command": "sethome"}
 			ret.update(args)
