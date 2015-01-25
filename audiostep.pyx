@@ -75,6 +75,12 @@ cdef class audiostep:
 		return main_iteration()
 
 	def write_more(self):
+		"""
+		Write more data to audio device. returns:
+		 - None if destination was reached (action needed).
+		 - negative error code
+		 - positive amount of data written to audio device
+		"""
 		cdef int ret
 		ret = push_more_audio_data();
 		if ret < -1:
