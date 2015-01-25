@@ -60,7 +60,7 @@ class Printer(object):
 		self.pid = {}
 		self.setpoint = {}
 		self.move = Move(self.cfg, self)
-		self.gcode = Gcode(self.cfg)
+		self.gcode = GCode(self.cfg)
 		self.sc = sc
 		self.current_e = 0
 		self.extruder_safety_timeout = 300 # FIXME
@@ -137,7 +137,7 @@ class Printer(object):
 	def gcode_processor(self):
 		while True:
 			if self.gcode_file is None and self.gcode_queue.empty():
-				yield from asyncio.sleep(0.5)
+				yield from asyncio.sleep(0.2)
 				continue
 			if self.gcode_file:
 				l = self.gcode_file.readline()
@@ -157,7 +157,24 @@ class Printer(object):
 			obj = self.gcode.process_line(cmd, l[1:].strip(" \r\n"))
 			if obj is None:
 				continue
+			# print("Move:", repr(obj))
 			yield from self.move.process_command(obj, self.command_queue)
+
+	def update_status(self):
+		if self.idling:
+			status = "idle"
+		elif self.gcode_file is not None:
+			status = "processing"
+		else:
+			status = "moving"
+		ext = "off" # FIXME
+		bed = "off" # FIXME
+		self.webui.queue_status(status, ext, bed)
+
+	def set_idle(self, idle):
+		if idle != self.idling:
+			self.idling = idle
+			self.update_status()
 
 	def handle_sc_write(self):
 		if not self.idling:
@@ -169,11 +186,11 @@ class Printer(object):
 				pos = self.command_queue.get_nowait()
 			except asyncio.QueueEmpty:
 				self.sc.zero_output()
-				self.idling = True
+				self.set_idle(True)
 				break
 			self.sc.handle_command(pos)
 			ret = self.sc.write_more()
-			self.idling = False
+			self.set_idle(False)
 
 	def run(self):
 		self.loop.run_forever()

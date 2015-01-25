@@ -23,6 +23,7 @@ window.onload = function() {
 }
 
 .maindiv {
+	position: relative;
 	width: 45%;
     padding: 2px;
     border: 2px solid #c0c0ff;
@@ -42,6 +43,21 @@ window.onload = function() {
 	height: 380px;
 }
 
+#div_statline {
+	width: 100%;
+	position: absolute;
+	bottom: 0px;
+}
+
+#table_statline {
+	width: 100%;
+	table-layout: fixed;
+}
+
+#table_statline.tr.td {
+	 width="33%";
+}
+
 </style>
 </head>
 <body>
@@ -53,10 +69,45 @@ window.onload = function() {
 	<div id="div_mov_title">
 		Control
 	</div>
-	File: <input type="text" id="filename_entry">
-		<button type="button" onclick="btnStart();">Start</button><br>
-	GCode: <input type="text" id="gcode_entry">
-		<button type="button" onclick="btnGcode();">Execute</button><br>
+	<table style="width:100%">
+	<tr>
+		<td>File:</td>
+		<td colspan="2"><input type="text" id="filename_entry"></td>
+		<td><button type="button" class="gcodebtn" onclick="btnStart();">Start</button></td>
+		<td><button type="button" onclick="btnPause();">Pause</button></td>
+		<td><button type="button" onclick="btnStop();">Stop</button></td>
+	</tr>
+	<tr>
+		<td>GCode:</td>
+		<td colspan="2"><input type="text" id="gcode_entry"></td>
+		<td><button type="button" class="gcodebtn" onclick="btnGcode();">Execute</button></td>
+	</tr>
+	<tr>
+		<td><button type="button" class="gcodebtn" onclick="btnHome();">Home (G28)</button>
+		<td><input type="checkbox" id="homex_check"/>home X</td>
+		<td><input type="checkbox" id="homey_check"/>home Y</td>
+		<td><input type="checkbox" id="homez_check"/>home Z</td>
+	</tr>
+	<tr>
+		<td>Manual Move:</td>
+		<td><button type="button" class="gcodebtn" onclick="btnMove('Z');">Z +</button></td>
+		<td><button type="button" class="gcodebtn" onclick="btnMove('Y');">Y +</button></td>
+	</tr>
+	<tr>
+		<td><button type="button" class="gcodebtn" onclick="btnMove('X-');">X -</button></td>
+		<td><input type="text" id="distance_entry" size="6" value="5">mm</td>
+		<td><button type="button" class="gcodebtn" onclick="btnMove('X');">X +</button></td>
+		<td colspan="2">Feedrate<input type="text" id="feedrate_entry" size="6" value="3000">mm/min</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td><button type="button" class="gcodebtn" onclick="btnMove('Z-');">Z -</button></td>
+		<td><button type="button" class="gcodebtn" onclick="btnMove('Y-');">Y -</button></td>
+	</tr>
+	<div id="div_statline">
+	Status line
+	</div>
+	</table>
 </div>
 
 <div id="div_mov" class="maindiv">

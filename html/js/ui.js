@@ -193,14 +193,51 @@ function UIInit()
 
 function btnStart()
 {
-	cmd = new WSCommand("runfile");
+	var cmd = new WSCommand("runfile");
 	cmd.filename = document.getElementById("filename_entry").value;
 	WSSendObject(cmd);
 }
 
 function btnGcode()
 {
-	cmd = new WSCommand("gcode");
+	var cmd = new WSCommand("gcode");
 	cmd.code = document.getElementById("gcode_entry").value;
 	WSSendObject(cmd);
+}
+
+function btnHome()
+{
+	var cmd = new WSCommand("gcode");
+	cmd.code = "G28"
+	if (document.getElementById("homex_check").checked)
+		cmd.code += " X0";
+	if (document.getElementById("homey_check").checked)
+		cmd.code += " Y0";
+	if (document.getElementById("homez_check").checked)
+		cmd.code += " Z0";
+	if (cmd.code.length > 3)
+		WSSendObject(cmd);
+}
+
+function btnMove(axis)
+{
+	var cmd = new WSCommand("gcode");
+	cmd.code = "G91"; // Relative mode
+	WSSendObject(cmd);
+	cmd.code = "G1 " + axis + document.getElementById("distance_entry").value;
+	cmd.code += " F" + document.getElementById("feedrate_entry").value;
+	WSSendObject(cmd);
+	cmd.code = "G90"; // Absolute mode
+	WSSendObject(cmd);
+}
+
+function block_move_buttons(block)
+{
+	var btns = document.getElementsByClassName("gcodebtn");
+	var n = btns.length;
+	var i;
+
+	for (i = 0; i < n; i ++) {
+		btns[i].disabled = block;
+	}
 }

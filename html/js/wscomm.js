@@ -12,10 +12,10 @@ function log(s)
 	console.log((ti/1000.0).toFixed(3) + "   : " + s);
 }
 
-function WSParseStatus(obj)
+function WSParseTemp(obj)
 {
-	add_plot_data(plotdata_t_ext, obj.temp_ext);
-	add_plot_data(plotdata_t_bed, obj.temp_bed);
+	add_plot_data(plotdata_t_ext, obj.extruder);
+	add_plot_data(plotdata_t_bed, obj.bed);
 	draw_plot("canvas_t_ext", plotdata_t_ext);
 	draw_plot("canvas_t_bed", plotdata_t_bed);
 }
@@ -40,6 +40,24 @@ function WSParseMove(obj)
 	draw_movements("canvas_mov", plotdata_mov);
 }
 
+function WSParseStatus(obj)
+{
+	var mot = obj.motors;
+	var ext = obj.extruder;
+	var bed = obj.bed;
+	var sline = document.getElementById("div_statline");
+
+	log("Status: " + mot + " " + ext + " " + bed);
+	if (mot == "idle") {
+		block_move_buttons(false);
+	} else {
+		block_move_buttons(true);
+	}
+	sline.innerHTML = "<table id='table_statline'><tr><td>Status: " +
+		mot + "</td><td>Extruder: " + ext +
+		"</td><td>Bed: " + bed + "</td></tr></table>";
+}
+
 function WSHandler(txt)
 {
 	var obj = JSON.parse(txt.data);
@@ -48,11 +66,14 @@ function WSHandler(txt)
 	// log(txt.data);
 
 	switch(id) {
-	case "status":
-		WSParseStatus(obj);
+	case "temperature":
+		WSParseTemp(obj);
 		break;
 	case "move":
 		WSParseMove(obj);
+		break;
+	case "status":
+		WSParseStatus(obj);
 		break;
 	default:
 		break;

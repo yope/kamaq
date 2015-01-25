@@ -32,8 +32,8 @@ class WsHanlder(object):
 		self.ws_acked = True
 		self.ws_queue = []
 		self.websock = websock
-		self.webui.add_websocket(self)
 		self.queue = deque()
+		self.webui.add_websocket(self)
 
 	@asyncio.coroutine
 	def send_message(self, obj):
@@ -100,9 +100,9 @@ class WebUi(object):
 		start = websockets.serve(self.websocket_handler, '0.0.0.0', 9999)
 		self.websockd = self.loop.run_until_complete(start)
 		print("...done")
-		#asyncio.async(self.sim_status())
+		#asyncio.async(self.sim_temperature())
 		#asyncio.async(self.simulate())
-		asyncio.async(self.coro_status())
+		asyncio.async(self.coro_temperature())
 
 	@asyncio.coroutine
 	def websocket_handler(self, websock, path):
@@ -126,24 +126,25 @@ class WebUi(object):
 			self.queue_move(x, y, z, 0)
 
 	@asyncio.coroutine
-	def coro_status(self):
+	def coro_temperature(self):
 		while True:
 			yield from asyncio.sleep(1)
 			t_ext = self.printer.get_temperature("ext")
 			t_bed = self.printer.get_temperature("bed")
-			self.queue({"id": "status", "temp_ext": t_ext, "temp_bed": t_bed})
+			self.queue({"id": "temperature", "extruder": t_ext, "bed": t_bed})
 
 	@asyncio.coroutine
-	def sim_status(self):
+	def sim_temperature(self):
 		while True:
 			yield from asyncio.sleep(1)
 			t_ext = random.randrange(20, 50)
 			t_bed = random.randrange(20, 50)
-			self.queue({"id": "status", "temp_ext": t_ext, "temp_bed": t_bed})
+			self.queue({"id": "temperature", "extruder": t_ext, "bed": t_bed})
 
 	def add_websocket(self, wsock):
 		print("add_websocket")
 		self.wsockets.append(wsock)
+		self.printer.update_status()
 
 	def del_websocket(self, wsock):
 		try:
@@ -162,6 +163,9 @@ class WebUi(object):
 
 	def queue_move(self, x, y, z, e):
 		self.queue({"id": "move", "x": x, "y": y, "z": z, "e": e})
+
+	def queue_status(self, motors, extruder, bed):
+		self.queue({"id": "status", "motors": motors, "extruder": extruder, "bed": bed});
 
 # Test function
 if __name__ == "__main__":
