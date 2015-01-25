@@ -14,8 +14,7 @@ from audiostep import audiostep
 from gpio import AsyncGPInput
 
 class StepperCluster(object):
-	def __init__(self, audiodev, dim, cfg, move):
-		self.move = move
+	def __init__(self, audiodev, dim, cfg):
 		self.cfg = cfg
 		self.invert = [1 - int(x) * 2 for x in cfg.settings["invert_motor"]]
 		self.audio = audiostep(audiodev, dim)
@@ -26,7 +25,7 @@ class StepperCluster(object):
 			self.audio.set_amplitude_dc(0.3)
 		self.dim = dim
 		self.prepare_endswitches()
-		self.speed_scale = 1.0
+		self.set_speed_scale(1.0)
 		self.max_feedrate = cfg.settings["max_feedrate"] / 60.0
 
 	def set_speed_scale(self, ss):
@@ -48,13 +47,7 @@ class StepperCluster(object):
 		self.cancel_destination()
 		self.restart()
 
-	def get_next_destination(self):
-		if self.move is None:
-			return None
-		try:
-			obj = next(self.move.movements)
-		except StopIteration:
-			return False
+	def handle_command(self, obj):
 		cmd = obj[0]
 		pos = obj[1]
 		if cmd == "feedrate":
@@ -72,13 +65,6 @@ class StepperCluster(object):
 				self.audio.set_position(pos)
 		else:
 			print("SC: Unknown object:", repr(obj))
-		return True
-
-	def main_iteration(self):
-		ret = self.get_next_destination()
-		if ret:
-			self.process_one_move()
-		return ret
 
 	def set_feedrate(self, rate):
 		rate = self.speed_scale * rate
@@ -128,26 +114,3 @@ class StepperCluster(object):
 				break
 		self.zero_output()
 		self.close()
-
-class StepperClusterDispatcher(object):
-	def __init__(self, stepper_cluster, callback):
-		self.sc = stepper_cluster
-		self.cb = callback
-		self.idle = False
-		self.loop = asyncio.get_event_loop()
-		self.loop.add_writer(self.sc.fileno(), self.handle_write)
-
-	def handle_write(self):
-		if self.idle:
-			self.sc.zero_output()
-			return
-		ret = self.sc.write_more()
-		while ret is None:
-			ret = self.sc.get_next_destination()
-			if ret is None:
-				break
-			if ret:
-				ret = self.sc.write_more()
-		if not ret:
-			self.cb.end_of_file() # Exits if webui not running
-			self.idle = True

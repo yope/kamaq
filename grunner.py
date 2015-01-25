@@ -38,7 +38,7 @@ class GRunner(object):
 		self.btemp = None
 		self.pid = {}
 		self.zero_extruder = False
-		self.printer = Printer(self.cfg)
+		#self.printer = Printer(self.cfg)
 		self.webui = None
 		while True:
 			try:
@@ -74,8 +74,9 @@ class GRunner(object):
 			elif a == "-l":
 				self.limit = float(argv.pop(0)) / 60.0
 			elif a == "-w":
-				self.webui = WebUi(self.printer)
-				self.printer.add_webui(self.webui)
+				#self.webui = WebUi(self.printer)
+				#self.printer.add_webui(self.webui)
+				self.run_webui()
 			elif a == "--no-extrusion":
 				self.zero_extruder = True
 			else:
@@ -136,6 +137,16 @@ class GRunner(object):
 			self.sc.zero_output()
 			self.sc.close()
 		sys.exit(0)
+
+	def run_webui(self):
+		signal.signal(signal.SIGINT, self.signal_handler)
+		self.loop = asyncio.get_event_loop()
+		sc = StepperCluster(self.audiodev, self.dim, self.cfg)
+		self.printer = Printer(self.cfg, sc)
+		#scd = StepperClusterDispatcher(self.sc, self.printer)
+		self.webui = WebUi(self.printer)
+		self.printer.add_webui(self.webui)
+		self.printer.run()
 
 	def signal_handler(self, signal, frame):
 		print('You pressed Ctrl+C!')

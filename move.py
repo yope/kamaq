@@ -13,9 +13,10 @@ from math import *
 from gcode import GCode
 import signal
 import sys
+import asyncio
 
 class Move(object):
-	def __init__(self, cfg, gcode, printer):
+	def __init__(self, cfg, printer):
 		self.mm2steps = [float(x * (1 - int(y) * 2)) for x, y in zip(
 				cfg.settings["steps_per_mm"], cfg.settings["invert_motor"])]
 		self.dim = cfg.settings["num_motors"]
@@ -25,17 +26,11 @@ class Move(object):
 		for i in range(len(self.motor_name)):
 			self.motor_name_indexes[self.motor_name[i]] = i
 		self.printer = printer
-		self.gcode = gcode
-		if gcode is not None:
-			self.start()
 		self.feedrate = 0.0
 		self.feedrate0 = 0.0
 		self.orig_feedrate = 0.0
 		self.last_pos = [0.0] * self.dim
 		self.last_mpos = [0.0] * self.dim
-
-	def start(self):
-		self.movements = self.movement_generator()
 
 	def transform(self, gpos):
 		ret = list(map(lambda x, y: x * y, gpos, self.mm2steps))
@@ -94,57 +89,49 @@ class Move(object):
 			yield ("position", p)
 			yield ("sethome", None)
 
-	def movement_generator(self):
-		while True:
-			try:
-				obj = next(self.gcode.commands)
-			except StopIteration:
-				break
-			if not "command" in obj:
-				print("MOVE: Unknown command object:", repr(obj))
-				continue
-			cmd = obj["command"]
-			if cmd == "position":
-				pos = [0] * self.dim
-				for w in obj:
-					idx = self.motor_name_indexes.get(w, None)
-					if idx is not None:
-						pos[idx] = obj[w]
-					elif w == "F":
-						self.set_feedrate(obj[w])
-				self.printer.set_position_mm(*pos)
-				p = self.transform(pos)
-				self.transform_feedrate(self._sub(pos, self.last_pos), self._sub(p, self.last_mpos))
-				if self.feedrate != self.feedrate0:
-					self.feedrate0 = self.feedrate
-					yield ("feedrate", self.feedrate)
-				yield ("position", p)
-				self.last_pos = pos
-				self.last_mpos = p
-			elif cmd == "home":
-				axes = []
-				for w in obj:
-					idx = self.motor_name_indexes.get(w, None)
-					if idx is not None:
-						axes.append(idx)
-				if not axes:
-					axes = range(3)
-				homing = self.homing_generator(axes)
-				while True:
-					try:
-						cmd = next(homing)
-					except StopIteration:
-						break
-					yield cmd
-			elif cmd == "sethome":
-				pos = [p for p in self.last_pos]
-				for w in obj:
-					idx = self.motor_name_indexes.get(w, None)
-					if idx is not None:
-						pos[idx] = obj[w]
-				p = self.transform(pos)
-				yield (cmd, p)
-			elif cmd == "setpoint":
-				pass
-		raise StopIteration
+	@asyncio.coroutine
+	def process_command(self, obj, queue):
+		cmd = obj["command"]
+		if cmd == "position":
+			pos = [0] * self.dim
+			for w in obj:
+				idx = self.motor_name_indexes.get(w, None)
+				if idx is not None:
+					pos[idx] = obj[w]
+				elif w == "F":
+					self.set_feedrate(obj[w])
+			self.printer.set_position_mm(*pos)
+			p = self.transform(pos)
+			self.transform_feedrate(self._sub(pos, self.last_pos), self._sub(p, self.last_mpos))
+			if self.feedrate != self.feedrate0:
+				self.feedrate0 = self.feedrate
+				yield from queue.put(("feedrate", self.feedrate))
+			yield from queue.put(("position", p))
+			self.last_pos = pos
+			self.last_mpos = p
+		elif cmd == "home":
+			axes = []
+			for w in obj:
+				idx = self.motor_name_indexes.get(w, None)
+				if idx is not None:
+					axes.append(idx)
+			if not axes:
+				axes = range(3)
+			homing = self.homing_generator(axes)
+			while True:
+				try:
+					cmd = next(homing)
+				except StopIteration:
+					break
+				yield from queue.put(cmd)
+		elif cmd == "sethome":
+			pos = [p for p in self.last_pos]
+			for w in obj:
+				idx = self.motor_name_indexes.get(w, None)
+				if idx is not None:
+					pos[idx] = obj[w]
+			p = self.transform(pos)
+			yield from queue.put((cmd, p))
+		elif cmd == "setpoint":
+			pass
 

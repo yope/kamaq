@@ -190,3 +190,17 @@ function UIInit()
 	draw_plot("canvas_t_bed", plotdata_t_bed);
 	draw_movements("canvas_mov", plotdata_mov);
 }
+
+function btnStart()
+{
+	cmd = new WSCommand("runfile");
+	cmd.filename = document.getElementById("filename_entry").value;
+	WSSendObject(cmd);
+}
+
+function btnGcode()
+{
+	cmd = new WSCommand("gcode");
+	cmd.code = document.getElementById("gcode_entry").value;
+	WSSendObject(cmd);
+}

@@ -77,6 +77,11 @@ class WsHanlder(object):
 	@asyncio.coroutine
 	def parse_object(self, obj):
 		print("WS: received:", repr(obj))
+		cmd = obj.get("command", None)
+		if cmd == "runfile":
+			yield from self.webui.printer.print_file(obj["filename"])
+		elif cmd == "gcode":
+			yield from self.webui.printer.execute_gcode(obj["code"])
 
 	def on_disconnect(self):
 		print("WS: disconnect")

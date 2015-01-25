@@ -13,14 +13,55 @@ from temp100k import Thermistor100k
 from hwmon import ScaledSensor
 from gpio import GPOutput
 from pid import PidController
+from gcode import GCode
+from move import Move
 import time
+import asyncio
+import queue
+
+class AIOFileReader(object):
+	def __init__(self, fname, queue=None):
+		if queue is None:
+			self.queue = queue.Queue(10)
+		else:
+			self.queue = queue
+		self.loop = asyncio.get_event_loop()
+		self.fname = fname
+		self.eof = False
+		self.loop.run_in_executor(None, self.read_thread)
+
+	def read_thread(self):
+		with open(self.fname, "r") as f:
+			for l in f:
+				self.queue.put(l)
+		self.eof = True
+
+	def readline(self):
+		try:
+			ret = self.queue.get_nowait()
+		except queue.Empty:
+			if self.eof:
+				ret = None
+			else:
+				ret = ""
+		return ret
+
+	def eof(self):
+		return self.eof and self.queue.empty()
 
 class Printer(object):
-	def __init__(self, cfg):
+	def __init__(self, cfg, sc):
 		self.cfg = cfg
 		self.webui = None
+		self.gcode_queue = queue.Queue(100)
+		self.gcode_file = None
+		self.command_queue = asyncio.Queue(100)
+		self.idling = True
 		self.pid = {}
 		self.setpoint = {}
+		self.move = Move(self.cfg, self)
+		self.gcode = Gcode(self.cfg)
+		self.sc = sc
 		self.current_e = 0
 		self.extruder_safety_timeout = 300 # FIXME
 		self.extruder_safety_time = time.time() + self.extruder_safety_timeout
@@ -30,6 +71,9 @@ class Printer(object):
 			s = ScaledSensor(self.cfg, name)
 			t = Thermistor100k(s)
 			self.pid[n] = PidController(t, o, 0.3, 0.004, 0.5)
+		self.loop = asyncio.get_event_loop()
+		self.loop.add_writer(self.sc.fileno(), self.handle_sc_write)
+		asyncio.async(self.gcode_processor())
 
 	def add_webui(self, webui):
 		self.webui = webui
@@ -63,3 +107,73 @@ class Printer(object):
 				self.setpoint["ext"] > 150:
 			print("Extruder safety timeout hit. Lowering setpoint!")
 			self.pid["ext"].set_setpoint(self.setpoint["ext"] - 50)
+
+	@asyncio.coroutine
+	def print_file(self, fname):
+		if self.gcode_file is not None:
+			return False
+		print("Starting print:", fname)
+		self.gcode_file = AIOFileReader(fname, self.gcode_queue)
+		asyncio.sleep(0)
+		return True
+
+	@asyncio.coroutine
+	def execute_gcode(self, cmd):
+		try:
+			self.gcode_queue.put_nowait(cmd)
+		except queue.Full:
+			return False
+		yield from asyncio.sleep(0)
+		return True
+
+	def _read_gcode(self):
+		try:
+			ret = self.gcode_queue.get_nowait()
+		except queue.Empty:
+			ret = ""
+		return ret
+
+	@asyncio.coroutine
+	def gcode_processor(self):
+		while True:
+			if self.gcode_file is None and self.gcode_queue.empty():
+				yield from asyncio.sleep(0.5)
+				continue
+			if self.gcode_file:
+				l = self.gcode_file.readline()
+			else:
+				l = self._read_gcode()
+			if l is None: # End of file
+				self.gcode_file = None
+				continue
+			elif len(l) == 0: # File reader stalled
+				yield from asyncio.sleep(0)
+				continue
+			cmd = l[0]
+			if cmd == ";":
+				print(l.strip(" \r\n"))
+			if not cmd in ['G', 'M', 'T']:
+				continue
+			obj = self.gcode.process_line(cmd, l[1:].strip(" \r\n"))
+			if obj is None:
+				continue
+			yield from self.move.process_command(obj, self.command_queue)
+
+	def handle_sc_write(self):
+		if not self.idling:
+			ret = self.sc.write_more()
+		else:
+			ret = None
+		while ret is None:
+			try:
+				pos = self.command_queue.get_nowait()
+			except asyncio.QueueEmpty:
+				self.sc.zero_output()
+				self.idling = True
+				break
+			self.sc.handle_command(pos)
+			ret = self.sc.write_more()
+			self.idling = False
+
+	def run(self):
+		self.loop.run_forever()

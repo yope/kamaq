@@ -13,11 +13,7 @@ from math import *
 import sys
 
 class GCode(object):
-	def __init__(self, cfg, filename):
-		if isinstance(filename, str):
-			self.f = open(filename, "r")
-		else:
-			self.f = filename # Assume it's a file-like object
+	def __init__(self, cfg):
 		self.dim = cfg.settings["num_motors"]
 		self.motor_name = cfg.settings["motor_name"]
 		self.pos = {}
@@ -25,8 +21,7 @@ class GCode(object):
 			self.pos[m] = 0.0
 		self.pos["F"] = 0.0 # Feedrate
 		self.pos["command"] = "position" # Default position command
-		self.commands = self.command_generator()
-		self.zero_extruder = False
+		self.set_zero_extruder(False)
 
 	def set_zero_extruder(self, val):
 		self.zero_extruder = val
@@ -68,7 +63,7 @@ class GCode(object):
 			print("Set Home and absolute positioning")
 			return {"command": "sethome"}
 		elif code == 92: # Set home
-			ret = {"command": "home"}
+			ret = {"command": "sethome"}
 			ret.update(args)
 			return ret
 		else:
@@ -108,21 +103,4 @@ class GCode(object):
 			return self.process_M(code, args)
 		elif cmd == "T":
 			return self.process_T(code, args)
-
-	def command_generator(self):
-		for l in self.f:
-			cmd = l[0]
-			if cmd == ";":
-				print(l.strip(" \r\n"))
-			if not cmd in ['G', 'M', 'T']:
-				continue
-			ret = self.process_line(cmd, l[1:].strip(" \r\n"))
-			if ret is not None:
-				yield ret
-		self.f.close()
-		raise StopIteration
-
-if __name__ == "__main__":
-	cfg = Config("bla.ini")
-	g = GCode(cfg, sys.argv[1])
-
+		return None
