@@ -32,8 +32,7 @@ class GCode(object):
 			pass
 		elif code == 104: # Set hotend temperature
 			val = float(args['S'])
-			print("Set temperature:", val, "deg. C")
-			return {"command": "setpoint", "type": "hotend", "value": val}
+			return {"command": "setpoint", "type": "ext", "value": val}
 		elif code == 106: # Set extruder fan speed
 			print("Set extruder fan speed:", args.get("S", 0))
 		else:
