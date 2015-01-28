@@ -83,8 +83,12 @@ class GCode(object):
 		else:
 			print("Unimplemented T: code =", code, repr(args))
 
-	def process_line(self, cmd, l):
-		words = l.split()
+	def process_line(self, l):
+		l = l.strip(" \r\n")
+		if len(l) < 2:
+			return None
+		cmd = l[0]
+		words = l[1:].split()
 		try:
 			code = int(words[0], 10)
 		except ValueError:

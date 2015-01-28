@@ -149,12 +149,7 @@ class Printer(object):
 			elif len(l) == 0: # File reader stalled
 				yield from asyncio.sleep(0)
 				continue
-			cmd = l[0]
-			if cmd == ";":
-				print(l.strip(" \r\n"))
-			if not cmd in ['G', 'M', 'T']:
-				continue
-			obj = self.gcode.process_line(cmd, l[1:].strip(" \r\n"))
+			obj = self.gcode.process_line(l)
 			if obj is None:
 				continue
 			# print("Move:", repr(obj))
