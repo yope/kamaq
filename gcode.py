@@ -42,6 +42,8 @@ class GCode(object):
 	def process_G(self, code, args):
 		if code == 1 or code == 0: # Controlled movement
 			for code in args:
+				if self.zero_extruder and code == "E":
+					continue
 				val = args[code]
 				if code in self.pos:
 					if code == "F":
@@ -52,8 +54,6 @@ class GCode(object):
 						self.pos[code] = val
 				else:
 					print("G1 unknown code:", code)
-			if self.zero_extruder:
-				self.pos["E"] = 0.0
 			return self.pos
 		elif code == 21: # Set metric units
 			pass
