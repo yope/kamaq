@@ -74,8 +74,12 @@ window.onload = function() {
 		<td>File:</td>
 		<td colspan="2"><input type="text" id="filename_entry"></td>
 		<td><button type="button" class="gcodebtn" onclick="btnStart();">Start</button></td>
-		<td><button type="button" onclick="btnPause();">Pause</button></td>
+		<td><button type="button" onclick="btnPause();" id="pause_button">Pause</button></td>
 		<td><button type="button" onclick="btnStop();">Stop</button></td>
+	</tr>
+	<tr>
+		<td colspan="2">Inihibit extruder:</td>
+		<td><input type="checkbox" id="extruder_check" onchange="checkExtruder();"/></td>
 	</tr>
 	<tr>
 		<td>GCode:</td>
@@ -97,12 +101,36 @@ window.onload = function() {
 		<td><button type="button" class="gcodebtn" onclick="btnMove('X-');">X -</button></td>
 		<td><input type="text" id="distance_entry" size="6" value="5">mm</td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('X');">X +</button></td>
-		<td colspan="2">Feedrate<input type="text" id="feedrate_entry" size="6" value="3000">mm/min</td>
+		<td colspan="2">Feedrate: <input type="text" id="feedrate_entry" size="6" value="3000"> mm/min</td>
 	</tr>
 	<tr>
 		<td></td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('Z-');">Z -</button></td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('Y-');">Y -</button></td>
+	</tr>
+	<tr>
+		<td>Speed scale:</td>
+		<td colspan="4"><input style="width: 100%;" type="range" min="0" max="12" id="speedscale_slider"
+				oninput="sliderSpeed();"/></td>
+		<td><input type="text" id="speedscale_entry" value="1.0"></td>
+	</tr>
+	<tr>
+		<td colspan=3>Process heater commands (M-codes):</td>
+		<td><input type="checkbox" id="mcodes_check" onchange="checkHeaterPolicy();"/></td>
+	</tr>
+	<tr>
+		<td colspan=3>Disable heaters at end of print:</td>
+		<td><input type="checkbox" id="heater_eof_check" onchange="checkHeaterPolicy();"/></td>
+	</tr>
+	<tr>
+		<td colspan=2>Extruder temperature:</td>
+		<td><input type="number" id="heater_ext_entry" size="6" value="245" min="20" max="280" onchange="changeHeater();"></td>
+		<td><input type="checkbox" id="heater_ext_check" onchange="changeHeater();"/>Enable heater</td>
+	</tr>
+	<tr>
+		<td colspan=2>Bed temperature:</td>
+		<td><input type="number" id="heater_bed_entry" size="6" value="100" min="20" max="120" onchange="changeHeater();"></td>
+		<td><input type="checkbox" id="heater_bed_check" onchange="changeHeater();"/>Enable heater</td>
 	</tr>
 	<div id="div_statline">
 	Status line

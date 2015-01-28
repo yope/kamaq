@@ -40,22 +40,26 @@ function WSParseMove(obj)
 	draw_movements("canvas_mov", plotdata_mov);
 }
 
+var printer_status = "idle";
+var extruder_status = "off";
+var bed_status = "off";
+
 function WSParseStatus(obj)
 {
-	var mot = obj.motors;
-	var ext = obj.extruder;
-	var bed = obj.bed;
+	printer_status = obj.motors;
+	extruder_status = obj.extruder;
+	bed_status = obj.bed;
 	var sline = document.getElementById("div_statline");
 
-	log("Status: " + mot + " " + ext + " " + bed);
-	if (mot == "idle") {
+	log("Status: " + printer_status + " " + extruder_status + " " + bed_status);
+	if (printer_status == "idle") {
 		block_move_buttons(false);
 	} else {
 		block_move_buttons(true);
 	}
 	sline.innerHTML = "<table id='table_statline'><tr><td>Status: " +
-		mot + "</td><td>Extruder: " + ext +
-		"</td><td>Bed: " + bed + "</td></tr></table>";
+		printer_status + "</td><td>Extruder: " + extruder_status +
+		"</td><td>Bed: " + bed_status + "</td></tr></table>";
 }
 
 function WSHandler(txt)

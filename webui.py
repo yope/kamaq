@@ -77,11 +77,26 @@ class WsHanlder(object):
 	@asyncio.coroutine
 	def parse_object(self, obj):
 		print("WS: received:", repr(obj))
+		p = self.webui.printer
 		cmd = obj.get("command", None)
 		if cmd == "runfile":
-			yield from self.webui.printer.print_file(obj["filename"])
+			yield from p.print_file(obj["filename"])
 		elif cmd == "gcode":
-			yield from self.webui.printer.execute_gcode(obj["code"])
+			yield from p.execute_gcode(obj["code"])
+		elif cmd == "no_extrusion":
+			p.gcode.set_zero_extruder(obj["value"])
+		elif cmd == "speed_scale":
+			p.sc.set_speed_scale(obj["value"])
+		elif cmd == "pause":
+			p.set_pause(obj["value"])
+		elif cmd == "stop":
+			yield from p.stop()
+		elif cmd == "heater":
+			p.set_setpoint("bed", obj["bed_setpoint"])
+			p.set_setpoint("ext", obj["extruder_setpoint"])
+		elif cmd == "heater_policy":
+			p.set_heater_enable_mcodes(obj["enable_mcodes"])
+			p.set_heater_disable_eof(obj["diable_at_eof"])
 
 	def on_disconnect(self):
 		print("WS: disconnect")

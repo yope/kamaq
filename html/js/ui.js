@@ -26,7 +26,6 @@ function draw_axes(id, ymin, ymax)
 			break;
 	}
 	dist = rng / div;
-	log("div = "+String(div)+" dist = " + String(dist));
 
 	ctx=canvas.getContext("2d");
 	ctx.beginPath();
@@ -198,6 +197,39 @@ function btnStart()
 	WSSendObject(cmd);
 }
 
+var printer_status_before_pause = "idle";
+
+function btnPause()
+{
+	var btn = document.getElementById("pause_button");
+	var state = btn.innerText;
+	var next_state;
+	var cmd = new WSCommand("pause");
+
+	if (state.indexOf("Pause") >= 0) {
+		printer_status_before_pause = printer_status;
+		block_move_buttons(false);
+		next_state = "Continue";
+		cmd.value = true;
+	} else {
+		log(printer_status_before_pause);
+		if (printer_status_before_pause.indexOf("idle") < 0) {
+			block_move_buttons(true);
+		}
+		next_state = "Pause";
+		cmd.value = false
+	}
+	WSSendObject(cmd);
+	btn.innerText = next_state;
+}
+
+function btnStop()
+{
+	if (!confirm("Really stop?"))
+		return;
+	WSSendObject(new WSCommand("stop"));;
+}
+
 function btnGcode()
 {
 	var cmd = new WSCommand("gcode");
@@ -240,4 +272,53 @@ function block_move_buttons(block)
 	for (i = 0; i < n; i ++) {
 		btns[i].disabled = block;
 	}
+}
+
+var speed_scale_factor = [0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.7, 2.0, 2.4, 2.8];
+
+function sliderSpeed()
+{
+	var sval = document.getElementById("speedscale_slider").value;
+	var cmd = new WSCommand("speed_scale");
+
+	cmd.value = speed_scale_factor[sval];
+	document.getElementById("speedscale_entry").value = cmd.value;
+	WSSendObject(cmd);
+}
+
+function checkExtruder()
+{
+	var val = document.getElementById("extruder_check").checked;
+
+	var cmd = new WSCommand("no_extrusion");
+	cmd.value = val;
+	WSSendObject(cmd);
+}
+
+function checkHeaterPolicy()
+{
+	var cmd = new WSCommand("heater_policy");
+
+	cmd.enable_mcodes = document.getElementById("mcodes_check").checked;
+	cmd.disable_at_eof = document.getElementById("heater_eof_check").checked;
+	WSSendObject(cmd);
+}
+
+function changeHeater()
+{
+	var exton = document.getElementById("heater_ext_check").checked;
+	var bedon = document.getElementById("heater_bed_check").checked;
+	var t_ext = Number(document.getElementById("heater_ext_entry").value);
+	var t_bed = Number(document.getElementById("heater_bed_entry").value);
+	var cmd = new WSCommand("heater");
+
+	if (!exton)
+		t_ext = 10
+	if (!bedon)
+		t_bed = 10
+	cmd.extruder_setpoint = t_ext;
+	cmd.bed_setpoint = t_bed;
+	cmd.extruder_enable = exton;
+	cmd.bed_enable = bedon;
+	WSSendObject(cmd);
 }
