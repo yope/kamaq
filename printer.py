@@ -72,6 +72,8 @@ class Printer(object):
 		self.pause = False
 		self.pid = {}
 		self.setpoint = {}
+		self.tolerance = 3
+		self.current_status = None
 		self.heater_enable_mcodes = False
 		self.heater_disable_eof = False
 		self.machine_ready = False
@@ -105,8 +107,8 @@ class Printer(object):
 			self.pid[name].set_setpoint(0)
 			self.pid[name].shutdown()
 
-	def set_setpoint(self, name, sp):
-		if sp < 10:
+	def set_setpoint(self, name, sp, report=True):
+		if sp and sp < 10:
 			sp = 10
 		elif name == "ext" and sp > 280:
 			sp = 280
@@ -115,33 +117,40 @@ class Printer(object):
 		print("Set", name, "temperature:", sp, "deg. C")
 		self.setpoint[name] = sp
 		self.pid[name].set_setpoint(sp)
+		if report and self.webui:
+			self.webui.queue_setpoint(name, sp)
 
 	def get_temperature(self, name):
 		return self.pid[name].get_input()
 
-	def check_setpoints(self, tolerance=3):
-		t_ext = self.get_temperature("ext")
-		t_bed = self.get_temperature("bed")
-		sp_ext = self.setpoint["ext"]
-		sp_bed = self.setpoint["bed"]
-		dt_ext = abs(t_ext - sp_ext)
-		dt_bed = abs(t_bed - sp_bed)
-		if sp_ext < 30: # Heater off = ok
-			dt_ext = 0
-		if sp_bed < 30: # Heater off = ok
-			dt_bed = 0
-		return (dt_ext < tolerance) and (dt_bed < tolerance)
+	def check_setpoint(self, name):
+		temp = self.get_temperature(name)
+		sp = self.setpoint[name]
+		dt = abs(temp - sp)
+		if sp < 30: # Heater off = ok
+			dt = 0
+		return (dt < self.tolerance)
+
+	def check_setpoints(self):
+		return self.check_setpoint("ext") and self.check_setpoint("bed")
 
 	@asyncio.coroutine
 	def coro_check_machine(self):
-		tol = 3
+		self.tolerance = 3
+		wasok = True
 		while True:
-			res = self.check_setpoints(tol)
+			res = self.check_setpoints()
 			if res: # Hysteresis
-				tol = 5
+				self.tolerance = 10
 			else:
-				tol = 3
+				self.tolerance = 3
+			if not res and wasok:
+				print("Printer not ready")
+			elif res and not wasok:
+				print("Printer ready")
+			wasok = res
 			self.machine_ready = res
+			self.update_status()
 			yield from asyncio.sleep(2.0)
 
 	def set_position_mm(self, x, y, z, e):
@@ -197,8 +206,8 @@ class Printer(object):
 				if l is None: # End of file
 					self.gcode_file = None
 					if self.heater_disable_eof:
-						self.set_setpoint("ext", 20)
-						self.set_setpoint("bed", 20)
+						self.set_setpoint("ext", 0)
+						self.set_setpoint("bed", 0)
 					continue
 			else:
 				l = self._read_gcode()
@@ -213,19 +222,40 @@ class Printer(object):
 			if cmd == "setpoint":
 				if self.heater_enable_mcodes:
 					self.set_setpoint(obj["type"], obj["value"])
+			elif cmd == "log":
+				self.webui.queue_log(obj['type'], obj['value'])
 			else:
 				yield from self.move.process_command(obj, self.command_queue)
 
-	def update_status(self):
+	def _heater_status(self, name):
+		ok = self.check_setpoint(name)
+		sp = self.setpoint[name]
+		temp = self.get_temperature(name)
+		if sp == 0:
+			return "off"
+		if ok:
+			return "ok"
+		if sp > temp:
+			return "low"
+		if sp < temp:
+			return "high"
+
+	def update_status(self, force=False):
 		if self.idling:
-			status = "idle"
+			motors = "idle"
 		elif self.gcode_file is not None:
-			status = "processing"
+			motors = "processing"
 		else:
-			status = "moving"
-		ext = "off" # FIXME
-		bed = "off" # FIXME
-		self.webui.queue_status(status, ext, bed)
+			motors = "moving"
+		ext = self._heater_status("ext")
+		bed = self._heater_status("bed")
+		status = (motors, ext, bed)
+		if self.webui is None:
+			return
+		if self.current_status == status:
+			return
+		self.current_status = status
+		self.webui.queue_status(*status)
 
 	def set_idle(self, idle):
 		if idle != self.idling:
@@ -260,11 +290,11 @@ class Printer(object):
 			self.gcode_file = None
 		while not self.gcode_queue.empty():
 			self.gcode_queue.get_nowait()
-		while not self.command_queue():
+		while not self.command_queue.empty():
 			self.command_queue.get_nowait()
 		self.sc.cancel_destination()
-		self.set_setpoint("ext", 10)
-		self.set_setpoint("bed", 10)
+		self.set_setpoint("ext", 0)
+		self.set_setpoint("bed", 0)
 		yield from self.execute_gcode("G91")
 		yield from self.execute_gcode("G1 Z5 F5000")
 		yield from self.execute_gcode("G90")

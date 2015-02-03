@@ -93,15 +93,17 @@ window.onload = function() {
 		<td><input type="checkbox" id="homez_check"/>home Z</td>
 	</tr>
 	<tr>
-		<td>Manual Move:</td>
+		<td>Manual:</td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('Z');">Z +</button></td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('Y');">Y +</button></td>
+		<td colspan=3><button type="button" class="gcodebtn" onclick="btnMove('E');">Extrude</button>
+		<input type="text" id="extrude_distance_entry" size="4" value="10">mm</td>
 	</tr>
 	<tr>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('X-');">X -</button></td>
 		<td><input type="text" id="distance_entry" size="6" value="5">mm</td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('X');">X +</button></td>
-		<td colspan="2">Feedrate: <input type="text" id="feedrate_entry" size="6" value="3000"> mm/min</td>
+		<td colspan="3">Feedrate: <input type="text" id="feedrate_entry" size="6" value="3000"> mm/min</td>
 	</tr>
 	<tr>
 		<td></td>
@@ -123,7 +125,7 @@ window.onload = function() {
 		<td><input type="checkbox" id="heater_eof_check" onchange="checkHeaterPolicy();"/></td>
 	</tr>
 	<tr>
-		<td colspan=2>Extruder temperature:</td>
+		<td colspan=2>Hotend temperature:</td>
 		<td><input type="number" id="heater_ext_entry" size="6" value="245" min="20" max="280" onchange="changeHeater();"></td>
 		<td><input type="checkbox" id="heater_ext_check" onchange="changeHeater();"/>Enable heater</td>
 	</tr>
@@ -133,20 +135,61 @@ window.onload = function() {
 		<td><input type="checkbox" id="heater_bed_check" onchange="changeHeater();"/>Enable heater</td>
 	</tr>
 	<div id="div_statline">
-	Status line
+	<table id='table_statline'>
+		<tr>
+		<td><div id="div_motor_status">Status:-</div></td>
+		<td><div id="div_ext_status">Hotend:-</div></td>
+		<td><div id="div_bed_status">Bed:-</div></td>
+		</tr>
 	</div>
 	</table>
 </div>
 
 <div id="div_mov" class="maindiv">
+	<table>
+	<tr>
+	<td>
 	<div id="div_mov_graph">
 		<canvas id="canvas_mov"></canvas>
 	</div>
+	</td>
+	<td>
+	<div id="div_mov_info">
+		<table>
+		<tr>
+			<td>Layer:</td>
+			<td><div id="div_log_layer">-</div></td>
+		</tr>
+		<tr>
+			<td>Part:</td>
+			<td><div id="div_log_part">-</div></td>
+		</tr>
+		<tr>
+			<td>Pos X:</td>
+			<td><div id="div_log_posx">-</div></td>
+		</tr>
+		<tr>
+			<td>Pos Y:</td>
+			<td><div id="div_log_posy">-</div></td>
+		</tr>
+		<tr>
+			<td>Pos Z:</td>
+			<td><div id="div_log_posz">-</div></td>
+		</tr>
+		<tr>
+			<td>Pos E:</td>
+			<td><div id="div_log_pose">-</div></td>
+		</tr>
+		</table>
+	</div>
+	</td>
+	</tr>
+	</table>
 </div>
 
 <div id="div_t_ext" class="graphdiv">
 	<div id="div_t_ext_title">
-		Extruder temperature
+		Hotend temperature
 	</div>
 	<div id="div_t_ext_graph">
 		<canvas id="canvas_t_ext" class="plot"></canvas>

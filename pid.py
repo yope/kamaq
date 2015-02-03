@@ -26,9 +26,7 @@ def PidProcess(pid, cmdqueue):
 				print("PID: Unknown command object:", repr(obj))
 				continue
 			cmd = obj["command"]
-			if cmd == "setpoint":
-				pid.set_setpoint(obj["value"])
-			elif cmd == "shutdown":
+			if cmd == "shutdown":
 				break
 			else:
 				print("PID: Unsupported command:", cmd)
@@ -45,33 +43,36 @@ class PidController(object):
 		self.P = P
 		self.I = I * period
 		self.D = D / period
-		self.integ = 0.0
-		self.setpoint = 0
-		self.errq = queue.Queue()
-		self.err0 = 0.0
-		self.output = 0.0
 		self.period = period
 		self.windup_limit = 100.0
-		self.cmdqueue = multiprocessing.Queue()
+		self.reset_pid()
+		self.setvalue = multiprocessing.Value('d')
 		self.outvalue = multiprocessing.Value('d')
 		self.invalue = multiprocessing.Value('d')
+		self.cmdqueue = multiprocessing.Queue()
 		self.proc = multiprocessing.Process(target=PidProcess,
 							args=(self, self.cmdqueue))
 		self.spawned = False
 		self.validate_previous = None
 
+	def reset_pid(self):
+		self.integ = 0.0
+		self.errq = queue.Queue()
+		self.err0 = 0.0
+		self.output = 0.0
+		self.failure_timestamp = 0
+
 	def set_setpoint(self, sp):
-		if self.spawned:
-			self.cmdqueue.put({"command": "setpoint", "value": sp})
-		else:
-			self.setpoint = sp
+		self.setvalue.value = sp
 
 	def validate_sensor(self, current):
 		if current < 10.0:
 			print("Temperature too low!")
+			self.failure_timestamp = time.time()
 			return None
 		if current > 300.0:
 			print("Temperature too high!")
+			self.failure_timestamp = time.time()
 			return None
 		prev = self.validate_previous
 		if prev is None:
@@ -79,6 +80,7 @@ class PidController(object):
 			return current
 		if abs(prev - current) > 20.0:
 			print("Temperature sensor unstable!")
+			self.failure_timestamp = time.time()
 			return None
 		self.validate_previous = current
 		return current
@@ -91,8 +93,17 @@ class PidController(object):
 			print("Temperature sensor failure detected. Shutting down heater!")
 			self.actuator.set_output(0)
 			self.outvalue.value = 0
-			return False
-		err = self.setpoint - current
+			time.sleep(2)
+			return True
+		setpoint = self.setvalue.value
+		if (time.time() - self.failure_timestamp) < 10 or not setpoint:
+			self.actuator.set_output(0)
+			time.sleep(1)
+			return True
+		if self.failure_timestamp:
+			print("Temperature sensor back to normal. Resuming heater.")
+			self.reset_pid()
+		err = setpoint - current
 		derr = err - self.err0
 		self.errq.put(err)
 		if self.errq.qsize() < 3:

@@ -38,6 +38,10 @@ function WSParseMove(obj)
 	var p = [obj.x, obj.y, obj.z, type];
 	add_plot_data(plotdata_mov, p, reset);
 	draw_movements("canvas_mov", plotdata_mov);
+	document.getElementById("div_log_posx").innerHTML = obj.x;
+	document.getElementById("div_log_posy").innerHTML = obj.y;
+	document.getElementById("div_log_posz").innerHTML = obj.z;
+	document.getElementById("div_log_pose").innerHTML = obj.e;
 }
 
 var printer_status = "idle";
@@ -49,7 +53,9 @@ function WSParseStatus(obj)
 	printer_status = obj.motors;
 	extruder_status = obj.extruder;
 	bed_status = obj.bed;
-	var sline = document.getElementById("div_statline");
+	var divm = document.getElementById("div_motor_status");
+	var dive = document.getElementById("div_ext_status");
+	var divb = document.getElementById("div_bed_status");
 
 	log("Status: " + printer_status + " " + extruder_status + " " + bed_status);
 	if (printer_status == "idle") {
@@ -57,9 +63,39 @@ function WSParseStatus(obj)
 	} else {
 		block_move_buttons(true);
 	}
-	sline.innerHTML = "<table id='table_statline'><tr><td>Status: " +
-		printer_status + "</td><td>Extruder: " + extruder_status +
-		"</td><td>Bed: " + bed_status + "</td></tr></table>";
+	divm.innerHTML = "Printer: " + printer_status;
+	dive.innerHTML = "Hotend: " + extruder_status;
+	divb.innerHTML = "Bed: " + bed_status;
+	if ((extruder_status.indexOf("ok") < 0) && (extruder_status.indexOf("off") < 0))
+		dive.style.backgroundColor = "red";
+	else
+		dive.style.backgroundColor = "green";
+	if ((bed_status.indexOf("ok") < 0) && (bed_status.indexOf("off") < 0))
+		divb.style.backgroundColor = "red";
+	else
+		divb.style.backgroundColor = "green";
+}
+
+function WSParseLog(obj)
+{
+	if (obj.type == "layer") {
+		document.getElementById("div_log_layer").innerHTML = obj.value;
+	} else if (obj.type == "part") {
+		document.getElementById("div_log_part").innerHTML = obj.value;
+	}
+}
+
+function WSParseSetpoint(obj)
+{
+	var id_entry = "heater_" + obj.type + "_entry";
+	var id_check = "heater_" + obj.type + "_check";
+
+	if (obj.value == 0) {
+		document.getElementById(id_check).checked = false;
+	} else {
+		document.getElementById(id_check).checked = true;
+		document.getElementById(id_entry).value = obj.value;
+	}
 }
 
 function WSHandler(txt)
@@ -78,6 +114,12 @@ function WSHandler(txt)
 		break;
 	case "status":
 		WSParseStatus(obj);
+		break;
+	case "log":
+		WSParseLog(obj);
+		break;
+	case "setpoint":
+		WSParseSetpoint(obj);
 		break;
 	default:
 		break;

@@ -82,11 +82,49 @@ class GCode(object):
 		else:
 			print("Unimplemented T: code =", code, repr(args))
 
+	def process_comment(self, l):
+		l = l.lower().strip(' \r\n')
+		cmd = {"command": "log", 'type': 'part'}
+		if l.startswith('layer:'):
+			num = l.split(':',1)[1]
+			try:
+				num = int(num)
+			except ValueError:
+				return None
+			cmd['type'] = 'layer'
+			cmd['value'] = num
+			return cmd
+		elif l.startswith('type:'):
+			cmd['value'] = l.split(':',1)[1]
+			return cmd
+		elif l.startswith('layer '):
+			num = l.split(' ',1)[1]
+			if num[0] == 's':
+				num = num[1:]
+			try:
+				num = int(num)
+			except ValueError:
+				return None
+			cmd['type'] = 'layer'
+			cmd['value'] = num
+			return cmd
+		elif l.startswith('skirt'):
+			cmd['value'] = 'skirt'
+			return cmd
+		elif l.startswith('infill'):
+			cmd['value'] = 'fill'
+			return cmd
+		elif l.startswith('shell'):
+			cmd['value'] = 'wall'
+			return cmd
+
 	def process_line(self, l):
 		l = l.strip(" \r\n")
 		if len(l) < 2:
 			return None
 		cmd = l[0]
+		if cmd == ";":
+			return self.process_comment(l[1:])
 		words = l[1:].split()
 		try:
 			code = int(words[0], 10)
@@ -96,7 +134,7 @@ class GCode(object):
 		args = {}
 		for w in words:
 			if w[0] == ";":
-				break
+				return self.process_comment(w[1:]) # FIXME: Rest of line?
 			if w[0] in ["X", "Y", "Z", "E", "F", "S", "P", "R"]:
 				snum = w[1:]
 				try:

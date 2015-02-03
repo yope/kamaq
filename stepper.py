@@ -52,10 +52,11 @@ class StepperCluster(object):
 		pos = obj[1]
 		if cmd == "feedrate":
 			rate = pos
-			#print "Feedrate:", pos, "rate =", rate
 			self.set_feedrate(rate)
+		elif cmd == "feedrate3":
+			rate = pos
+			self.set_feedrate(*rate)
 		elif cmd == "position":
-			#print "Position:", repr(pos)
 			self.set_destination(pos)
 		elif cmd == "sethome":
 			print("Setting home pos:", repr(pos))
@@ -75,6 +76,17 @@ class StepperCluster(object):
 		if low > 0.05:
 			low = 0.05
 		self.audio.set_feedrate(low, high, low)
+
+	def set_feedrate3(self, begin, high, end):
+		inp = (begin, high, end)
+		fr = []
+		for x in inp:
+			x *= self.speed_scale
+			if self.max_feedrate and x > self.max_feedrate:
+				x = self.max_feedrate
+			x /= 600.0
+			fr.append(x)
+		self.audio.set_feedrate(*fr)
 
 	def set_destination(self, pos):
 		current = self.audio.get_position()

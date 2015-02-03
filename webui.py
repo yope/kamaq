@@ -38,7 +38,11 @@ class WsHanlder(object):
 	@asyncio.coroutine
 	def send_message(self, obj):
 		txt = json.dumps(obj)
-		yield from self.websock.send(txt)
+		try:
+			yield from self.websock.send(txt)
+		except websockets.exceptions.InvalidState:
+			print("Websocket stale. Removing...")
+			self.webui.del_websocket(self)
 
 	@asyncio.coroutine
 	def coro_queue(self):
@@ -80,7 +84,7 @@ class WsHanlder(object):
 		p = self.webui.printer
 		cmd = obj.get("command", None)
 		if cmd == "runfile":
-			yield from p.print_file(obj["filename"])
+			yield from p.print_file(os.path.join("data", obj["filename"]))
 		elif cmd == "gcode":
 			yield from p.execute_gcode(obj["code"])
 		elif cmd == "no_extrusion":
@@ -92,11 +96,11 @@ class WsHanlder(object):
 		elif cmd == "stop":
 			yield from p.stop()
 		elif cmd == "heater":
-			p.set_setpoint("bed", obj["bed_setpoint"])
-			p.set_setpoint("ext", obj["extruder_setpoint"])
+			p.set_setpoint("bed", obj["bed_setpoint"], report=False)
+			p.set_setpoint("ext", obj["extruder_setpoint"], report=False)
 		elif cmd == "heater_policy":
 			p.set_heater_enable_mcodes(obj["enable_mcodes"])
-			p.set_heater_disable_eof(obj["diable_at_eof"])
+			p.set_heater_disable_eof(obj["disable_at_eof"])
 
 	def on_disconnect(self):
 		print("WS: disconnect")
@@ -159,7 +163,7 @@ class WebUi(object):
 	def add_websocket(self, wsock):
 		print("add_websocket")
 		self.wsockets.append(wsock)
-		self.printer.update_status()
+		self.printer.update_status(force=True)
 
 	def del_websocket(self, wsock):
 		try:
@@ -180,7 +184,17 @@ class WebUi(object):
 		self.queue({"id": "move", "x": x, "y": y, "z": z, "e": e})
 
 	def queue_status(self, motors, extruder, bed):
-		self.queue({"id": "status", "motors": motors, "extruder": extruder, "bed": bed});
+		obj = {"id": "status", "motors": motors, "extruder": extruder, "bed": bed}
+		print(repr(obj))
+		self.queue(obj)
+
+	def queue_log(self, typ, value):
+		obj = {"id": "log", "type": typ, "value": value}
+		self.queue(obj)
+
+	def queue_setpoint(self, name, sp):
+		obj = {"id": "setpoint", "type": name, "value": sp}
+		self.queue(obj)
 
 # Test function
 if __name__ == "__main__":

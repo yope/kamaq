@@ -254,9 +254,15 @@ function btnHome()
 function btnMove(axis)
 {
 	var cmd = new WSCommand("gcode");
+	var distance;
+
+	if (axis == "E")
+		distance = document.getElementById("extrude_distance_entry").value;
+	else
+		distance = document.getElementById("distance_entry").value;
 	cmd.code = "G91"; // Relative mode
 	WSSendObject(cmd);
-	cmd.code = "G1 " + axis + document.getElementById("distance_entry").value;
+	cmd.code = "G1 " + axis + String(distance);
 	cmd.code += " F" + document.getElementById("feedrate_entry").value;
 	WSSendObject(cmd);
 	cmd.code = "G90"; // Absolute mode
@@ -313,9 +319,9 @@ function changeHeater()
 	var cmd = new WSCommand("heater");
 
 	if (!exton)
-		t_ext = 10
+		t_ext = 0
 	if (!bedon)
-		t_bed = 10
+		t_bed = 0
 	cmd.extruder_setpoint = t_ext;
 	cmd.bed_setpoint = t_bed;
 	cmd.extruder_enable = exton;
