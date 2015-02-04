@@ -68,10 +68,13 @@ class GCode(object):
 		elif code == 91: # Relative positioning
 			print("Set relative positioning")
 			self.relative_mode = True
-		elif code == 92: # Set home
-			ret = {"command": "sethome"}
-			ret.update(args)
-			return ret
+		elif code == 92: # Set position
+			for a in ['X', 'Y', 'Z', 'E']:
+				if a in args:
+					self.pos[a] = args[a]
+				elif len(args) == 0:
+					self.pos[a] = 0
+			return None
 		else:
 			print("Unimplemented G: code =", code, repr(args))
 		return None

@@ -124,14 +124,6 @@ class Move(object):
 				except StopIteration:
 					break
 				yield from queue.put(cmd)
-		elif cmd == "sethome":
-			pos = [p for p in self.last_pos]
-			for w in obj:
-				idx = self.motor_name_indexes.get(w, None)
-				if idx is not None:
-					pos[idx] = obj[w]
-			p = self.transform(pos)
-			yield from queue.put((cmd, p))
 		elif cmd == "setpoint":
 			pass
 
