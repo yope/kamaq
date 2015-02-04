@@ -182,6 +182,21 @@ function add_plot_data(data, x, reset)
 	}
 }
 
+var total_layer_count = null;
+
+function UISetLayerCount(n)
+{
+	total_layer_count = n;
+}
+
+function UISetLayerNum(n)
+{
+	if (null !== total_layer_count) {
+		var perc = (n * 100.0) / total_layer_count;
+		document.getElementById("div_progress_perc").innerHTML = String(perc) + " %"
+	}
+}
+
 function UIInit()
 {
 	log("UI Init");
@@ -194,6 +209,7 @@ function btnStart()
 {
 	var cmd = new WSCommand("runfile");
 	cmd.filename = document.getElementById("filename_entry").value;
+	UISetLayerCount(null);
 	WSSendObject(cmd);
 }
 
@@ -227,7 +243,7 @@ function btnStop()
 {
 	if (!confirm("Really stop?"))
 		return;
-	WSSendObject(new WSCommand("stop"));;
+	WSSendObject(new WSCommand("stop"));
 }
 
 function btnGcode()

@@ -100,6 +100,14 @@ class GCode(object):
 		elif l.startswith('type:'):
 			cmd['value'] = l.split(':',1)[1]
 			return cmd
+		elif l.startswith('layer count:'):
+			num = l.split(':',1)[1]
+			try:
+				num = int(num)
+			except ValueError:
+				return None
+			cmd['type'] = 'layer_count'
+			cmd['value'] = num
 		elif l.startswith('layer '):
 			num = l.split(' ',1)[1]
 			if num[0] == 's':

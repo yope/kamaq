@@ -78,10 +78,15 @@ function WSParseStatus(obj)
 
 function WSParseLog(obj)
 {
-	if (obj.type == "layer") {
-		document.getElementById("div_log_layer").innerHTML = obj.value;
-	} else if (obj.type == "part") {
-		document.getElementById("div_log_part").innerHTML = obj.value;
+	var elem = document.getElementById("div_log_" + obj.type);
+
+	if (undefined !== elem)
+		elem.innerHTML = obj.value;
+
+	if (obj.type == "layer_count") {
+		UISetLayerCount(obj.value);
+	} else if (obj.type == "layer") {
+		UISetLayerNum(obj.value);
 	}
 }
 
