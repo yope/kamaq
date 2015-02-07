@@ -72,6 +72,7 @@ class Printer(object):
 		self.pause = False
 		self.pid = {}
 		self.setpoint = {}
+		self.setpoint_fail_time = {}
 		self.tolerance = 3
 		self.current_status = None
 		self.heater_enable_mcodes = False
@@ -116,6 +117,7 @@ class Printer(object):
 			sp = 120
 		print("Set", name, "temperature:", sp, "deg. C")
 		self.setpoint[name] = sp
+		self.setpoint_fail_time[name] = 0
 		self.pid[name].set_setpoint(sp)
 		if report and self.webui:
 			self.webui.queue_setpoint(name, sp)
@@ -129,7 +131,12 @@ class Printer(object):
 		dt = abs(temp - sp)
 		if sp < 30: # Heater off = ok
 			dt = 0
-		return (dt < self.tolerance)
+		ok = (dt < self.tolerance)
+		if ok:
+			self.setpoint_fail_time[name] = 0
+		elif not self.setpoint_fail_time[name]:
+			self.setpoint_fail_time[name] = time.time() + 10
+		return (ok or time.time() < self.setpoint_fail_time[name])
 
 	def check_setpoints(self):
 		return self.check_setpoint("ext") and self.check_setpoint("bed")
