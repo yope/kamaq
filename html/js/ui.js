@@ -228,7 +228,6 @@ function btnPause()
 		next_state = "Continue";
 		cmd.value = true;
 	} else {
-		log(printer_status_before_pause);
 		if (printer_status_before_pause.indexOf("idle") < 0) {
 			block_move_buttons(true);
 		}
