@@ -73,8 +73,8 @@ class StepperCluster(object):
 			rate = self.max_feedrate
 		high = rate / 600.0
 		low = high
-		if low > 0.05:
-			low = 0.05
+		if low > 0.02:
+			low = 0.02
 		self.audio.set_feedrate(low, high, low)
 
 	def set_feedrate3(self, begin, high, end):
