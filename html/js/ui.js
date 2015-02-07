@@ -193,7 +193,7 @@ function UISetLayerNum(n)
 {
 	if (null !== total_layer_count) {
 		var perc = (n * 100.0) / total_layer_count;
-		document.getElementById("div_progress_perc").innerHTML = String(perc) + " %"
+		document.getElementById("div_progress_perc").innerHTML = String(perc.toFixed(2)) + " %"
 	}
 }
 
