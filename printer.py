@@ -15,6 +15,7 @@ from gpio import GPOutput
 from pid import PidController
 from gcode import GCode
 from move import Move
+from vector import Interpolator
 import time
 import asyncio
 import queue
@@ -80,6 +81,7 @@ class Printer(object):
 		self.machine_ready = False
 		self.move = Move(self.cfg, self)
 		self.gcode = GCode(self.cfg)
+		self.inter = Interpolator(self.cfg)
 		self.sc = sc
 		self.current_e = 0
 		self.extruder_safety_timeout = 300 # FIXME
@@ -203,6 +205,8 @@ class Printer(object):
 	def gcode_processor(self):
 		while True:
 			if (self.gcode_file is None or self.pause) and self.gcode_queue.empty():
+				if self.inter.pending():
+					yield from self.command_queue.put(("eof", None))
 				yield from asyncio.sleep(0.2)
 				continue
 			if self.gcode_file and not self.pause:
@@ -215,11 +219,12 @@ class Printer(object):
 					if self.heater_disable_eof:
 						self.set_setpoint("ext", 0)
 						self.set_setpoint("bed", 0)
+					yield from self.command_queue.put(("eof", None))
 					continue
 			else:
 				l = self._read_gcode()
 			if len(l) == 0: # File reader stalled
-				yield from asyncio.sleep(0)
+				yield from self.command_queue.put(("eof", None))
 				continue
 			obj = self.gcode.process_line(l)
 			if obj is None:
@@ -281,9 +286,14 @@ class Printer(object):
 				self.sc.zero_output()
 				self.set_idle(True)
 				break
-			self.sc.handle_command(pos)
-			ret = self.sc.write_more()
-			self.set_idle(False)
+			more = True
+			while more and ret is None:
+				posout, more = self.inter.process_one(pos)
+				pos = None
+				if posout is not None:
+					self.sc.handle_command(posout)
+					ret = self.sc.write_more()
+					self.set_idle(False)
 
 	def set_pause(self, pause):
 		self.pause = pause
