@@ -17,12 +17,19 @@ class GCode(object):
 		self.dim = cfg.settings["num_motors"]
 		self.motor_name = cfg.settings["motor_name"]
 		self.pos = {}
-		for m in self.motor_name:
-			self.pos[m] = 0.0
-		self.pos["F"] = 0.0 # Feedrate
+		self.reset()
 		self.pos["command"] = "position" # Default position command
 		self.set_zero_extruder(False)
 		self.relative_mode = False
+
+	def reset(self):
+		for m in self.motor_name:
+			self.pos[m] = 0.0
+		self.pos["F"] = 0.0 # Feedrate
+
+	def set_position(self, pos):
+		for i, m in enumerate(self.motor_name):
+			self.pos[m] = pos[i]
 
 	def set_zero_extruder(self, val):
 		self.zero_extruder = val

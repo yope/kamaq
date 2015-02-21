@@ -101,6 +101,8 @@ class WsHanlder(object):
 		elif cmd == "heater_policy":
 			p.set_heater_enable_mcodes(obj["enable_mcodes"])
 			p.set_heater_disable_eof(obj["disable_at_eof"])
+		elif cmd == "reset":
+			p.reset()
 
 	def on_disconnect(self):
 		print("WS: disconnect")

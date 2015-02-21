@@ -96,6 +96,12 @@ class StepperCluster(object):
 				pos[i] = current[i]
 		self.audio.set_destination(pos)
 
+	def get_position(self):
+		return self.audio.get_position()
+
+	def set_position(self, pos):
+		self.audio.set_position(pos)
+
 	def process_one_move(self):
 		self.audio.process_one_move()
 

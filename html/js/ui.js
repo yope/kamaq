@@ -245,6 +245,13 @@ function btnStop()
 	WSSendObject(new WSCommand("stop"));
 }
 
+function btnReset()
+{
+	if (!confirm("Really reset printer coordinates?"))
+		return;
+	WSSendObject(new WSCommand("reset"));
+}
+
 function btnGcode()
 {
 	var cmd = new WSCommand("gcode");

@@ -310,11 +310,22 @@ class Printer(object):
 		while not self.command_queue.empty():
 			self.command_queue.get_nowait()
 		self.sc.cancel_destination()
+		# We may have interrupted a move. Make sure we know where we are...
+		scpos = self.sc.get_position()
+		gpos = self.move.reverse_transform(scpos)
+		self.gcode.set_position(gpos)
 		self.set_setpoint("ext", 0)
 		self.set_setpoint("bed", 0)
 		yield from self.execute_gcode("G91")
 		yield from self.execute_gcode("G1 Z5 F5000")
 		yield from self.execute_gcode("G90")
+
+	def reset(self):
+		self.gcode.reset()
+		self.sc.set_position([0, 0, 0, 0])
+		self.inter.reset()
+		self.move.reset()
+		self.set_position_mm(0, 0, 0, 0)
 
 	def set_heater_enable_mcodes(self, value):
 		self.heater_enable_mcodes = value

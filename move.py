@@ -26,6 +26,9 @@ class Move(object):
 		for i in range(len(self.motor_name)):
 			self.motor_name_indexes[self.motor_name[i]] = i
 		self.printer = printer
+		self.reset()
+
+	def reset(self):
 		self.feedrate = 0.0
 		self.feedrate0 = 0.0
 		self.orig_feedrate = 0.0
@@ -34,6 +37,10 @@ class Move(object):
 
 	def transform(self, gpos):
 		ret = list(map(lambda x, y: x * y, gpos, self.mm2steps))
+		return ret
+
+	def reverse_transform(self, scpos):
+		ret = list(map(lambda x, y: x / y, scpos, self.mm2steps))
 		return ret
 
 	def _dist(self, vec):
@@ -117,6 +124,8 @@ class Move(object):
 					axes.append(idx)
 			if not axes:
 				axes = range(3)
+			else:
+				axes.sort()
 			homing = self.homing_generator(axes)
 			while True:
 				try:
