@@ -81,6 +81,7 @@ class PidController(object):
 		if abs(prev - current) > 20.0:
 			print("Temperature sensor unstable!")
 			self.failure_timestamp = time.time()
+			self.validate_previous = current
 			return None
 		self.validate_previous = current
 		return current
