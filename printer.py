@@ -78,6 +78,7 @@ class Printer(object):
 		self.current_status = None
 		self.heater_enable_mcodes = False
 		self.heater_disable_eof = False
+		self.ignore_endstop = False
 		self.machine_ready = False
 		self.move = Move(self.cfg, self)
 		self.gcode = GCode(self.cfg)
@@ -332,6 +333,14 @@ class Printer(object):
 
 	def set_heater_disable_eof(self, value):
 		self.heater_disable_eof = value
+
+	def set_ignore_endstop(self, value):
+		if self.ignore_endstop != value:
+			self.ignore_endstop = value
+			if value:
+				self.sc.disable_endswitches()
+			else:
+				self.sc.enable_endswitches()
 
 	def run(self):
 		self.loop.run_forever()

@@ -35,6 +35,14 @@ class StepperCluster(object):
 		if limit:
 			self.max_feedrate = limit
 
+	def disable_endswitches(self):
+		for e in self.esw:
+			e.disable_exceptions()
+
+	def enable_endswitches(self):
+		for e in self.esw:
+			e.enable_exceptions()
+
 	def prepare_endswitches(self):
 		self.esw = []
 		for axis in ["X", "Y", "Z"]:

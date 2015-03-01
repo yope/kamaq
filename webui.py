@@ -89,6 +89,8 @@ class WsHanlder(object):
 			yield from p.execute_gcode(obj["code"])
 		elif cmd == "no_extrusion":
 			p.gcode.set_zero_extruder(obj["value"])
+		elif cmd == "ignore_endstop":
+			p.set_ignore_endstop(obj["value"])
 		elif cmd == "speed_scale":
 			p.sc.set_speed_scale(obj["value"])
 		elif cmd == "pause":

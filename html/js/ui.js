@@ -323,6 +323,15 @@ function checkExtruder()
 	WSSendObject(cmd);
 }
 
+function checkIgnoreStop()
+{
+	var val = document.getElementById("ign_stop_check").checked;
+
+	var cmd = new WSCommand("ignore_endstop");
+	cmd.value = val;
+	WSSendObject(cmd);
+}
+
 function checkHeaterPolicy()
 {
 	var cmd = new WSCommand("heater_policy");
