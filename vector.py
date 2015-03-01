@@ -55,8 +55,8 @@ class Interpolator(object):
 			self.queue_feedrate(rate)
 		elif cmd == "position":
 			self.queue_position(pos)
-		elif cmd == "sethome":
-			self.queue_sethome(pos)
+		elif cmd == "set_position":
+			self.queue_set_position(pos)
 		elif cmd == "eof":
 			print("vector: EOF")
 			self.queue_eof()
@@ -127,10 +127,10 @@ class Interpolator(object):
 			self.pos1 = pos
 			self.feedrate0 = self.feedrate1
 
-	def queue_sethome(self, pos):
+	def queue_set_position(self, pos):
 		self.queue_eof()
 		self.reset()
-		self.outq.put(("sethome", pos))
+		self.outq.put(("set_position", pos))
 
 	def queue_other(self, obj):
 		self.outq.put(obj)
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 	print(repr(i.process_one(("feedrate", 70))))
 	print(repr(i.process_one(("position", [10, 20, 0, 8]))))
 	print(repr(i.process_one(("position", [20, 10, 0, 11]))))
-	print(repr(i.process_one(("sethome", [20, 10, 0, 11]))))
+	print(repr(i.process_one(("set_position", [20, 10, 0, 11]))))
 	print(repr(i.process_one(("position", [2, 5, 0, 14]))))
 	print(repr(i.process_one(("position", [3, 10, 0, 17]))))
 	print(repr(i.process_one(("position", [3, 10, 0, 25]))))

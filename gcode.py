@@ -81,7 +81,9 @@ class GCode(object):
 					self.pos[a] = args[a]
 				elif len(args) == 0:
 					self.pos[a] = 0
-			return None
+			ret = {}.update(self.pos)
+			ret["command"] = "set_position"
+			return ret
 		else:
 			print("Unimplemented G: code =", code, repr(args))
 		return None

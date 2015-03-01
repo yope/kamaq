@@ -78,7 +78,7 @@ class Move(object):
 			self.transform_feedrate(pos, p)
 			yield ("feedrate", self.feedrate)
 			yield ("position", p)
-			yield ("sethome", None)
+			yield ("set_position", None)
 			if i < 2:
 				pos[i] = 4
 			else:
@@ -94,7 +94,7 @@ class Move(object):
 			self.transform_feedrate(pos, p)
 			yield ("feedrate", self.feedrate)
 			yield ("position", p)
-			yield ("sethome", None)
+			yield ("set_position", None)
 
 	@asyncio.coroutine
 	def process_command(self, obj, queue):
@@ -135,4 +135,13 @@ class Move(object):
 				yield from queue.put(cmd)
 		elif cmd == "setpoint":
 			pass
+		elif cmd == "set_position":
+			pos = [0] * self.dim
+			for w in obj:
+				idx = self.motor_name_indexes.get(w, None)
+				if idx is not None:
+					pos[idx] = obj[w]
+			self.printer.set_position_mm(*pos)
+			p = self.transform(pos)
+			yield from queue.put(("set_position", p))
 

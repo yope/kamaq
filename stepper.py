@@ -58,8 +58,8 @@ class StepperCluster(object):
 			self.set_feedrate3(*rate)
 		elif cmd == "position":
 			self.set_destination(pos)
-		elif cmd == "sethome":
-			print("Setting home pos:", repr(pos))
+		elif cmd == "set_position":
+			print("Setting pos:", repr(pos))
 			if pos is None:
 				self.audio.set_home()
 			else:
