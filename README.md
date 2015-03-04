@@ -4,27 +4,33 @@ Kamaq
 1. Introduction
 ---------------
 
-This project is an implementation of a G-Code interpreter that can directly
-control stepper-motors via an audio device, and receive feedback from end-
-switches connected via GPIO pins. It can also control heaters connected via
-GPIO outputs (low-frequency PWM) and feedback via lm-sensors interface.
-Why do it like this when there are already so many different hard- and software
-projects dedicated to 3D printers (RepRap and all its derivates)?
-Well, because as is the case with all engineers, I always know better ;-)
+Kamaq is a 3D-printer (FDM) controller software running on an embedded Linux
+system. It is capable of controlling a RepRap-style 3D printer, but with
+different electronics. Stepper motor control is done using a 8-channel (7.1)
+USB audio device and some class-D audio amplifiers. Endstop switches are
+monitored via GPIO inputs (interrupt-capable) and temperature control for
+extruder and heated bed via standard hwmon-compatible ADC's and GPIO-outputs
+for heater control. The software has a web-iterface for machine control and
+monitoring. Why do it like this when there are already so many different hard-
+and software projects dedicated to 3D printers (RepRap and all its
+derivatives)?  Well, because as is the case with all engineers, I always know
+better ;-)
 
 2. Status of this project
 -------------------------
 
-This project is currently in an early stage and in heavy development.
+This project is currently in heavy development. There are some bugs and missing
+features, but overall the software can be (and has been) used for many
+successful prints.
 The software can control 4 motors (X, Y, Z and Extruder), read 3 endswitches
-and control the extruder temperature. The G-Code interpreter is still very
-simple, but the software is already able to succesfully print an object from a
-G-Code-file generated with repsnapper.
+and control extruder- and heated-bed temperatures. The G-Code interpreter is
+still very simple, but the software is already able to succesfully print
+objects from a G-Code-file generated with cura or repsnapper.
 
 3. Platform requirements
 ------------------------
 
-This should be able to run on any embedded linux platform such as the beagle-
+Kamaq should be able to run on any embedded linux platform such as the beagle-
 board, beagle-bone or the raspberry-pi with a suitable audio device, GPIO and
 HWmon compatible A/D converters for temperature measurement.
 The sound device should have twice the number of channels as the number of
@@ -35,7 +41,7 @@ will be enough for controlling 4 stepper-motors.
 -------------------
 
 Of course the main goal for this project is controlling 3D-printer hardware,
-such as the RepRap Prusa i3 for example, but it may also be suited for other
+such as the RepRap Prusa i3 for example, but it may also be adapted for other
 applications requiring control of motors from G-Codes.
 
 5. Required hardware
@@ -67,8 +73,8 @@ with current-feedback based on a bunch of TDA2030A I had laying around. This
 version didn't require any motor modeling.
 The second version which I am currently using is based on class-D audio
 amplifier IC's, which save a lot of space and simplify the power supply
-enormously. The class-D amplifiers lack current-feedback though, so I am
-starting to add software support for voltage control also.
+enormously. The class-D amplifiers lack current-feedback though, so I have
+added rudimentary software support for voltage control also.
 
 5.3. Heater control
 -------------------
@@ -108,7 +114,8 @@ simple and straight-forward stuff right now hacked together in very little time.
    bed.
 
  * clean_extruder.sh: Move to a suitable position (high enough Z), heat
-   extruder and start extruding a few cm.
+   extruder and start extruding a few cm. Deprecated. Will be removed soon
+   probably.
 
 7. TODO:
 --------
