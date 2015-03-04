@@ -13,7 +13,7 @@ from config import Config
 from audiostep import audiostep
 import sys
 
-cfg = Config("grunner.conf")
+cfg = Config("kamaq.conf")
 dim = cfg.settings["num_motors"]
 vec = [0.0 for x in range(dim * 2)]
 if len(sys.argv) > 1:

@@ -1,5 +1,5 @@
-G-Runner
-========
+Kamaq
+=====
 
 1. Introduction
 ---------------
@@ -90,10 +90,12 @@ simple and straight-forward stuff right now hacked together in very little time.
 6. Tools
 --------
 
+ * kamaq.py: Main application, starts the web-server.
+
  * grunner.py: This command-line tool can execude whole G-Code files or single
    movements by specifying relative distance on each axis (including extruder)
    on the command-line. It supports homing on endswitches and extruder
-   temperature control.
+   temperature control. Currently not functional. Use the web-server instead.
 
  * set_current.py: Very simple tool that sets constant motor currents for all
    motors specified on the command-line. Can be used for adjusting motor
@@ -113,11 +115,7 @@ simple and straight-forward stuff right now hacked together in very little time.
 
 Features that may or may not be implemented in the near or far future:
 
- * Implement web-interface for control and progress monitoring.
- * Implement maximum-acceleration based speed limiting, interpolatig movements.
  * Implement pause and resume-from-layer-X.
- * Port the code to Python 3.4+ with asyncio (needs exception support in
-   asyncio) (DONE!)
  * Implemet G-code control via SSH or Serial port (to be able to use traditional
    printer control software).
 

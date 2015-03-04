@@ -40,6 +40,6 @@ class ScaledSensor(object):
 # Test function
 if __name__ == "__main__":
 	from config import Config
-	s = ScaledSensor(Config("grunner.conf"), "EXT")
+	s = ScaledSensor(Config("kamaq.conf"), "EXT")
 	print(repr(s.read()))
 

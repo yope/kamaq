@@ -26,7 +26,7 @@ from io import StringIO
 class GRunner(object):
 	def __init__(self, argv):
 		self.sc = None
-		self.cfg = Config("grunner.conf")
+		self.cfg = Config("kamaq.conf")
 		self.dim = self.cfg.settings["num_motors"]
 		self.audiodev = self.cfg.settings["sound_device"]
 		cmd = None

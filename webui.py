@@ -117,7 +117,7 @@ class WebUi(object):
 		self.httpd = web.Application()
 		self.httpd.router.add_static('/', './html/')
 		self.loop = asyncio.get_event_loop()
-		f = self.loop.create_server(self.httpd.make_handler(), '0.0.0.0', 8888)
+		f = self.loop.create_server(self.httpd.make_handler(), '0.0.0.0', 80)
 		self.server = self.loop.run_until_complete(f)
 		self.wsockets = []
 		start = websockets.serve(self.websocket_handler, '0.0.0.0', 9999)

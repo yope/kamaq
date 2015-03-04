@@ -154,7 +154,7 @@ if __name__ == "__main__":
 	from hwmon import ScaledSensor
 	from config import Config
 	from gpio import GPOutput
-	s = ScaledSensor(Config("grunner.conf"), "EXT")
+	s = ScaledSensor(Config("kamaq.conf"), "EXT")
 	t = Thermistor100k(s)
 	o = GPOutput("heater_EXT")
 	p = PidController(t, o, 0.2, 0.002, 0.5)

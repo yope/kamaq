@@ -50,7 +50,7 @@ class Thermistor100k(object):
 if __name__ == "__main__":
 	from hwmon import ScaledSensor
 	from config import Config
-	s = ScaledSensor(Config("grunner.conf"), "BED")
+	s = ScaledSensor(Config("kamaq.conf"), "BED")
 	t = Thermistor100k(s)
 	print(t.read(), "deg. Celsius")
 
