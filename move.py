@@ -65,6 +65,7 @@ class Move(object):
 		self.feedrate = sf * self.orig_feedrate
 
 	def homing_generator(self, axes):
+		yield ("set_position", None) # First set position 0
 		pos = {}
 		pos["command"] = "position"
 		for i in axes:
