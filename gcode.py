@@ -66,6 +66,9 @@ class GCode(object):
 			pass
 		elif code == 28: # Home position
 			print("Home position")
+			for n in self.motor_name:
+				if n in args:
+					self.pos[n] = 0.0
 			ret = {"command": "home"}
 			ret.update(args)
 			return ret
