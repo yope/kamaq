@@ -207,6 +207,7 @@ class Printer(object):
 		while True:
 			if (self.gcode_file is None or self.pause) and self.gcode_queue.empty():
 				if self.inter.pending():
+					self.move.reset()
 					yield from self.command_queue.put(("eof", None))
 				yield from asyncio.sleep(0.2)
 				continue
@@ -220,17 +221,19 @@ class Printer(object):
 					if self.heater_disable_eof:
 						self.set_setpoint("ext", 0)
 						self.set_setpoint("bed", 0)
+					self.move.reset()
 					yield from self.command_queue.put(("eof", None))
 					continue
 			else:
 				l = self._read_gcode()
 			if len(l) == 0: # File reader stalled
+				self.move.reset()
 				yield from self.command_queue.put(("eof", None))
 				continue
 			obj = self.gcode.process_line(l)
 			if obj is None:
 				continue
-			# print("Move:", repr(obj))
+			# print("PRINTER GCODE:", repr(obj))
 			cmd = obj["command"]
 			if cmd == "setpoint":
 				if self.heater_enable_mcodes:
