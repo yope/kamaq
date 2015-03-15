@@ -105,7 +105,7 @@ class Interpolator(object):
 			else:
 				# Do not interpolate Z- or feeder-only movements
 				norm = [0, 0, 0, 0]
-				dot = 1.0
+				dot = 0.0
 			if dot < 0.0:
 				dot = 0.0
 			if self.feedrate1 <= self.max_begin:
@@ -116,7 +116,6 @@ class Interpolator(object):
 				self.end = self.high
 			fr3 = (self.start, self.high, self.end)
 			if self.last_fr3 != fr3:
-				# print("vector fr3:",repr(fr3))
 				self.outq.put(("feedrate3", fr3))
 				self.last_fr3 = fr3
 			self.outq.put(("position", self.pos1))
