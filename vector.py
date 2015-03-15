@@ -16,7 +16,6 @@ class Interpolator(object):
 	def __init__(self, cfg):
 		self.max_begin = 12 # FIXME
 		self.feedrate0 = None
-		self.feedrate1 = None
 		self.start = 0
 		self.high = 0
 		self.end = 0
@@ -24,6 +23,7 @@ class Interpolator(object):
 		self.reset()
 
 	def reset(self):
+		self.feedrate1 = None
 		self.pos0 = [0, 0, 0, 0]
 		self.pos1 = None
 		self.norm0 = None
