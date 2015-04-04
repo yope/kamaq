@@ -167,6 +167,10 @@ function draw_plot(id, data)
 		ctx.lineTo(x2, ypltrange - ((data[i + 1] - ymin) * ypltrange) / yrange);
 	}
 	ctx.stroke();
+	ctx.font="40px sans-serif";
+	ctx.globalAlpha=0.5;
+	ctx.fillText(String(Math.round(data[data.length-1]*10) / 10) + "\u00b0C", xpltrange / 2 - 50, ypltrange / 2 - 10);
+	ctx.globalAlpha=1.0;
 }
 
 function add_plot_data(data, x, reset)
