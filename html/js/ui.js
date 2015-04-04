@@ -213,6 +213,23 @@ function btnStart()
 	WSSendObject(cmd);
 }
 
+function btnAuto()
+{
+	var cmd = new WSCommand("auto");
+
+	cmd.filename = document.getElementById("filename_entry").value;
+	cmd.extruder_setpoint = Number(document.getElementById("heater_ext_entry").value);
+	cmd.bed_setpoint = Number(document.getElementById("heater_bed_entry").value);
+	// cmd.extruder_enable = document.getElementById("heater_ext_check").checked;
+	// cmd.bed_enable = document.getElementById("heater_bed_check").checked;
+	cmd.extruder_enable = true;
+	cmd.bed_enable = true;
+	cmd.enable_mcodes = document.getElementById("mcodes_check").checked;
+	cmd.disable_at_eof = document.getElementById("heater_eof_check").checked;
+	UISetLayerCount(null);
+	WSSendObject(cmd);
+}
+
 var printer_status_before_pause = "idle";
 
 function btnPause()

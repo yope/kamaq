@@ -187,6 +187,36 @@ class Printer(object):
 		return True
 
 	@asyncio.coroutine
+	def start_auto(self, sp_ext, en_ext, sp_bed, en_bed, fname):
+		if self.gcode_file is not None:
+			return False
+		if en_bed:
+			# Heat up bed first
+			self.set_setpoint("bed", sp_bed)
+			while True:
+				t_bed = self.get_temperature("bed")
+				if t_bed > (sp_bed - 10):
+					break
+				yield from asyncio.sleep(5)
+		if en_ext:
+			# Bed near ok, so start hotend
+			self.set_setpoint("ext", sp_ext)
+			while True:
+				t_ext = self.get_temperature("ext")
+				if t_ext > (sp_ext - 10):
+					break
+				yield from asyncio.sleep(5)
+		# Temperatures high enough to start homing
+		self.reset()
+		yield from self.execute_gcode("G28 X0 Y0")
+		while True:
+			if self._heater_status("bed") == "ok" and self._heater_status("ext") == "ok":
+				break
+			yield from asyncio.sleep(2)
+		yield from self.execute_gcode("G28 Z0")
+		yield from self.print_file(fname)
+
+	@asyncio.coroutine
 	def execute_gcode(self, cmd):
 		try:
 			self.gcode_queue.put_nowait(cmd)

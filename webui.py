@@ -105,6 +105,14 @@ class WsHanlder(object):
 			p.set_heater_disable_eof(obj["disable_at_eof"])
 		elif cmd == "reset":
 			p.reset()
+		elif cmd == "auto":
+			t_bed = obj["bed_setpoint"]
+			t_ext = obj["extruder_setpoint"]
+			en_bed = obj["bed_enable"]
+			en_ext = obj["extruder_enable"]
+			p.set_heater_enable_mcodes(obj["enable_mcodes"])
+			p.set_heater_disable_eof(obj["disable_at_eof"])
+			yield from p.start_auto(t_ext, en_ext, t_bed, en_bed, os.path.join("data", obj["filename"]))
 
 	def on_disconnect(self):
 		print("WS: disconnect")
