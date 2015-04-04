@@ -126,3 +126,14 @@ Features that may or may not be implemented in the near or far future:
  * Implemet G-code control via SSH or Serial port (to be able to use traditional
    printer control software).
 
+8. Building Kamaq:
+------------------
+
+Install build dependencies (debian jessie or ubuntu):
+
+ $ sudo apt-get install python3 cython3 libasound2-dev
+
+Building (in-place, installation not supported yet):
+
+ $ make
+
