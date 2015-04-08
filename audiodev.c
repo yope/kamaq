@@ -15,7 +15,7 @@
 #include <sys/poll.h>
 #include "audiodev.h"
 
-#define PERIODSIZE 128
+#define PERIODSIZE 256
 
 #define MICROSTEPS 16
 #define STEP_PERIOD_SIZE (4 * MICROSTEPS)
@@ -112,7 +112,7 @@ int audiostep_open(const char *devname, int channels, unsigned int rate)
 	int dir = 0;
 	int i;
 	snd_pcm_uframes_t periods = PERIODSIZE;
-	snd_pcm_uframes_t bufsize = PERIODSIZE * 4;
+	snd_pcm_uframes_t bufsize = PERIODSIZE * 8;
 
 	dim = channels;
 
