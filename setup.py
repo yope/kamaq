@@ -3,12 +3,14 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
-sources = ['audiostep.pyx', 'audiodev.c']
+audiostep_sources = ['audiostep.pyx', 'audiodev.c']
+move_sources = ['move.pyx']
+vector_sources = ['vector.pyx']
 
 ext_modules=[
-    Extension("audiostep",
-              sources,
-              libraries=["asound", "m"])
+	Extension("audiostep", audiostep_sources, libraries=["asound", "m"]),
+	Extension("move", move_sources, libraries = ['m']),
+	Extension("vector", vector_sources, libraries = ['m'])
 ]
 
 setup(

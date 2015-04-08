@@ -9,13 +9,14 @@
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
 
+import monkeypatch
 from temp100k import Thermistor100k
 from hwmon import ScaledSensor
-from gpio import GPOutput
+from gpio import GPOutput, AsyncGPInput
 from pid import PidController
 from gcode import GCode
 from move import Move
-from vector import Interpolator
+from stepper import StepperCluster
 import time
 import asyncio
 import queue
@@ -63,14 +64,14 @@ class AIOFileReader(object):
 		return self.eof and self.queue.empty()
 
 class Printer(object):
-	def __init__(self, cfg, sc):
+	def __init__(self, cfg):
 		self.cfg = cfg
 		self.webui = None
 		self.gcode_queue = queue.Queue(100)
 		self.gcode_file = None
-		self.command_queue = asyncio.Queue(5)
 		self.idling = True
 		self.pause = False
+		self.ev_buffer = asyncio.Event()
 		self.pid = {}
 		self.setpoint = {}
 		self.setpoint_fail_time = {}
@@ -79,11 +80,14 @@ class Printer(object):
 		self.heater_enable_mcodes = False
 		self.heater_disable_eof = False
 		self.ignore_endstop = False
+		self.prepare_endswitches()
 		self.machine_ready = False
 		self.move = Move(self.cfg, self)
 		self.gcode = GCode(self.cfg)
-		self.inter = Interpolator(self.cfg)
-		self.sc = sc
+		dim = self.cfg.settings["num_motors"]
+		audiodev = self.cfg.settings["sound_device"]
+		self.sc = StepperCluster(audiodev, dim, self.cfg, self.esw)
+		self.sc.connect_cmd_buffer(self.move.get_output_buffer())
 		self.current_e = 0
 		self.extruder_safety_timeout = 300 # FIXME
 		self.extruder_safety_time = time.time() + self.extruder_safety_timeout
@@ -110,6 +114,12 @@ class Printer(object):
 		for name in self.pid:
 			self.pid[name].set_setpoint(0)
 			self.pid[name].shutdown()
+		if self.sc is not None:
+			self.sc.zero_output()
+			self.sc.zero_output()
+			self.sc.zero_output()
+			self.sc.zero_output()
+			self.sc.close()
 
 	def set_setpoint(self, name, sp, report=True):
 		if sp and sp < 10:
@@ -234,11 +244,12 @@ class Printer(object):
 
 	@asyncio.coroutine
 	def gcode_processor(self):
+		idle = True
 		while True:
 			if (self.gcode_file is None or self.pause) and self.gcode_queue.empty():
-				if self.inter.pending():
-					self.move.reset()
-					yield from self.command_queue.put(("eof", None))
+				if not idle:
+					self.move.process_command({"command":"eof"})
+					idle = True
 				yield from asyncio.sleep(0.2)
 				continue
 			if self.gcode_file and not self.pause:
@@ -251,14 +262,14 @@ class Printer(object):
 					if self.heater_disable_eof:
 						self.set_setpoint("ext", 0)
 						self.set_setpoint("bed", 0)
+					self.move.process_command({"command":"eof"})
 					self.move.reset()
-					yield from self.command_queue.put(("eof", None))
 					continue
 			else:
 				l = self._read_gcode()
 			if len(l) == 0: # File reader stalled
+				self.move.process_command({"command":"eof"})
 				self.move.reset()
-				yield from self.command_queue.put(("eof", None))
 				continue
 			obj = self.gcode.process_line(l)
 			if obj is None:
@@ -271,7 +282,17 @@ class Printer(object):
 			elif cmd == "log":
 				self.webui.queue_log(obj['type'], obj['value'])
 			else:
-				yield from self.move.process_command(obj, self.command_queue)
+				if self.move.buffer_ready():
+					self.move.process_command(obj)
+					yield from asyncio.sleep(0)
+				else:
+					self.ev_buffer.clear()
+					# print("PRINTER: Wait cond")
+					yield from self.ev_buffer.wait()
+					# print("PRINTER: cond ready")
+					self.move.process_command(obj)
+				idle = False
+				self.set_idle(False)
 
 	def _heater_status(self, name):
 		ok = self.check_setpoint(name)
@@ -310,24 +331,14 @@ class Printer(object):
 
 	def handle_sc_write(self):
 		if not self.idling:
-			ret = self.sc.write_more()
-		else:
-			ret = None
-		while ret is None:
-			try:
-				pos = self.command_queue.get_nowait()
-			except asyncio.QueueEmpty:
-				self.sc.zero_output()
+			ret = self.sc.pull_cmd_buffer()
+			if ret == 1:
 				self.set_idle(True)
-				break
-			more = True
-			while more and ret is None:
-				posout, more = self.inter.process_one(pos)
-				pos = None
-				if posout is not None:
-					self.sc.handle_command(posout)
-					ret = self.sc.write_more()
-					self.set_idle(False)
+			if self.move.buffer_ready() and not self.ev_buffer.is_set():
+				# print("PRINTER: cond notify")
+				self.ev_buffer.set()
+		else:
+			self.sc.zero_output()
 
 	def set_pause(self, pause):
 		self.pause = pause
@@ -341,8 +352,6 @@ class Printer(object):
 			self.gcode_file = None
 		while not self.gcode_queue.empty():
 			self.gcode_queue.get_nowait()
-		while not self.command_queue.empty():
-			self.command_queue.get_nowait()
 		self.sc.cancel_destination()
 		# We may have interrupted a move. Make sure we know where we are...
 		scpos = self.sc.get_position()
@@ -357,7 +366,6 @@ class Printer(object):
 	def reset(self):
 		self.gcode.reset()
 		self.sc.set_position([0, 0, 0, 0])
-		self.inter.reset()
 		self.move.reset()
 		self.set_position_mm(0, 0, 0, 0)
 
@@ -371,9 +379,29 @@ class Printer(object):
 		if self.ignore_endstop != value:
 			self.ignore_endstop = value
 			if value:
-				self.sc.disable_endswitches()
+				self.disable_endswitches()
 			else:
-				self.sc.enable_endswitches()
+				self.enable_endswitches()
+
+	def disable_endswitches(self):
+		for e in self.esw:
+			e.disable_exceptions()
+
+	def enable_endswitches(self):
+		for e in self.esw:
+			e.enable_exceptions()
+
+	def prepare_endswitches(self):
+		self.esw = []
+		for axis in ["X", "Y", "Z"]:
+			eswname = "endstop_" + axis
+			self.esw.append(AsyncGPInput(eswname, self))
+
+	def gpio_event(self, name, val):
+		print("GPIO Event from", name, "value:", val)
+		self.sc.stop()
+		self.sc.cancel_destination()
+		self.sc.restart()
 
 	def run(self):
 		self.loop.run_forever()

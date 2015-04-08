@@ -11,42 +11,32 @@
 
 import monkeypatch
 from config import Config
-from stepper import StepperCluster
 from printer import Printer
 from webui import WebUi
 import sys
 import signal
-import asyncio
 
 class Kamaq(object):
 	def __init__(self, argv):
 		self.sc = None
 		self.cfg = Config("kamaq.conf")
-		self.dim = self.cfg.settings["num_motors"]
-		self.audiodev = self.cfg.settings["sound_device"]
 		self.run_webui()
 
 	def shutdown(self):
 		self.printer.shutdown()
-		if self.sc is not None:
-			self.sc.zero_output()
-			self.sc.zero_output()
-			self.sc.zero_output()
-			self.sc.zero_output()
-			self.sc.close()
 		sys.exit(0)
 
 	def run_webui(self):
 		signal.signal(signal.SIGINT, self.signal_handler)
-		self.loop = asyncio.get_event_loop()
-		sc = StepperCluster(self.audiodev, self.dim, self.cfg)
-		self.printer = Printer(self.cfg, sc)
+		self.printer = Printer(self.cfg)
 		self.webui = WebUi(self.printer)
 		self.printer.add_webui(self.webui)
 		self.printer.run()
 
 	def signal_handler(self, signal, frame):
 		print('You pressed Ctrl+C!')
+		if not hasattr(self, "printer"):
+			return # Ignore....
 		self.shutdown()
 
 if __name__ == "__main__":

@@ -8,52 +8,37 @@
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
 
-import monkeypatch
-import asyncio
 from audiostep import audiostep
 from gpio import AsyncGPInput
 
 class StepperCluster(object):
-	def __init__(self, audiodev, dim, cfg):
+	def __init__(self, audiodev, dim, cfg, esw):
 		self.cfg = cfg
 		self.invert = [1 - int(x) * 2 for x in cfg.settings["invert_motor"]]
-		self.audio = audiostep(audiodev, dim)
+		self.audio = audiostep(cfg, audiodev, dim, esw)
 		cfb = self.cfg.settings["current_feedback"]
 		if cfb:
 			self.audio.set_amplitude_dc(1.0)
 		else:
 			self.audio.set_amplitude_dc(0.3)
 		self.dim = dim
-		self.prepare_endswitches()
 		self.set_speed_scale(1.0)
 		self.max_feedrate = cfg.settings["max_feedrate"] / 60.0
 
+	def connect_cmd_buffer(self, buf):
+		self.audio.connect_cmd_buffer(buf)
+
+	def pull_cmd_buffer(self):
+		return self.audio.pull_cmd_buffer()
+
 	def set_speed_scale(self, ss):
 		self.speed_scale = ss
+		self.audio.set_speed_scale(ss)
 
 	def set_max_feedrate(self, limit):
 		if limit:
 			self.max_feedrate = limit
-
-	def disable_endswitches(self):
-		for e in self.esw:
-			e.disable_exceptions()
-
-	def enable_endswitches(self):
-		for e in self.esw:
-			e.enable_exceptions()
-
-	def prepare_endswitches(self):
-		self.esw = []
-		for axis in ["X", "Y", "Z"]:
-			eswname = "endstop_" + axis
-			self.esw.append(AsyncGPInput(eswname, self))
-
-	def gpio_event(self, name, val):
-		print("GPIO Event from", name, "value:", val)
-		self.stop()
-		self.cancel_destination()
-		self.restart()
+		self.audio.set_max_feedrate(limit)
 
 	def handle_command(self, obj):
 		cmd = obj[0]
@@ -76,32 +61,12 @@ class StepperCluster(object):
 			print("SC: Unknown object:", repr(obj))
 
 	def set_feedrate(self, rate):
-		rate = self.speed_scale * rate
-		if self.max_feedrate and rate > self.max_feedrate:
-			rate = self.max_feedrate
-		high = rate / 600.0
-		low = high
-		if low > 0.03:
-			low = 0.03
-		self.audio.set_feedrate(low, high, low)
+		self.audio.set_feedrate(rate, rate, rate)
 
 	def set_feedrate3(self, begin, high, end):
-		inp = (begin, high, end)
-		fr = []
-		for x in inp:
-			x *= self.speed_scale
-			if self.max_feedrate and x > self.max_feedrate:
-				x = self.max_feedrate
-			x /= 600.0
-			fr.append(x)
-		self.audio.set_feedrate(*fr)
+		self.audio.set_feedrate(begin, high, end)
 
 	def set_destination(self, pos):
-		current = self.audio.get_position()
-		for i, sw in enumerate(self.esw):
-			inp = sw.read_value()
-			if not inp and current[i] > pos[i] * self.invert[i]:
-				pos[i] = current[i]
 		self.audio.set_destination(pos)
 
 	def get_position(self):
@@ -133,10 +98,3 @@ class StepperCluster(object):
 
 	def write_more(self):
 		return self.audio.write_more()
-
-	def main_loop(self):
-		while True:
-			if not self.main_iteration():
-				break
-		self.zero_output()
-		self.close()
