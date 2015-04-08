@@ -18,6 +18,11 @@ class HWmonSensor(object):
 		self.hwmonpath = os.path.join(os.path.join(HWMON_SYSFS_PATH,
 				cfg.settings["hwmon_device"]), "device")
 		self.hwmonname = os.path.join(self.hwmonpath, name)
+		if not os.path.exists(self.hwmonname):
+			self.read = self.dummy_read
+
+	def dummy_read(self):
+		return 0.1
 
 	def read(self):
 		f = open(self.hwmonname, "r")
