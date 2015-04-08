@@ -381,7 +381,7 @@ void zero_output(void)
 
 void set_constant_level(double *c)
 {
-	write_current_reps(c, 100);
+	write_current_reps(c, PERIODSIZE);
 }
 
 void close_audio(void)
