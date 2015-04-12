@@ -1,0 +1,51 @@
+PCBNEW-LibModule-V1  vr 31 okt 2014 20:27:22 CET
+# encoding utf-8
+Units mm
+$INDEX
+MC4
+$EndINDEX
+$MODULE MC4
+Po 0 0 0 15 53BEE3F6 00000000 ~~
+Li MC4
+Cd MC4 straight
+Kw DEV
+Sc 0
+AR /53B82BD7
+Op 0 0 0
+T0 5.08 -6.35 2.6162 1.59766 0 0.3048 N V 21 N "P103"
+T1 0 5.08 1.524 1.524 0 0.3048 N V 21 N "STEPPER"
+DS 7.62 3.81 -7.62 3.81 0.381 21
+DS 7.62 2.54 -7.62 2.54 0.381 21
+DS -7.62 -3.81 7.62 -3.81 0.381 21
+DS -7.62 -3.81 -7.62 3.81 0.3048 21
+DS 7.62 3.81 7.62 -3.81 0.3048 21
+$PAD
+Sh "2" C 2.54 2.54 0 0 0
+Dr 1.524 0 0
+At STD N 00E0FFFF
+Ne 2 "/Power_Amplifier_A/OUT-"
+Po -1.89992 0
+$EndPAD
+$PAD
+Sh "3" C 2.54 2.54 0 0 0
+Dr 1.524 0 0
+At STD N 00E0FFFF
+Ne 3 "/Power_Amplifier_B/OUT+"
+Po 1.89992 0
+$EndPAD
+$PAD
+Sh "1" R 2.54 2.54 0 0 0
+Dr 1.524 0 0
+At STD N 00E0FFFF
+Ne 1 "/Power_Amplifier_A/OUT+"
+Po -5.69976 0
+$EndPAD
+$PAD
+Sh "4" C 2.54 2.54 0 0 0
+Dr 1.524 0 0
+At STD N 00E0FFFF
+Ne 4 "/Power_Amplifier_B/OUT-"
+Po 5.69976 0
+$EndPAD
+$EndMODULE MC4
+$EndLIBRARY
