@@ -1,6 +1,6 @@
-update=za 02 mei 2015 15:37:31 CEST
+update=za 02 mei 2015 21:05:59 CEST
 version=1
-last_client=cvpcb
+last_client=kicad
 [pcbnew]
 version=1
 LastNetListRead=
@@ -88,10 +88,10 @@ LibName34=cm6206
 LibName35=adc128s022
 LibName36=74hct08
 LibName37=marula-connector
-[general]
-version=1
 [cvpcb]
 version=1
 NetIExt=net
 [cvpcb/libraries]
 EquName1=footprints
+[general]
+version=1
