@@ -1,4 +1,4 @@
-Cmp-Mod V01 Created by CvPcb (22-Jun-2014 BZR 4027)-stable date = za 02 mei 2015 15:37:39 CEST
+Cmp-Mod V01 Created by CvPcb (22-Jun-2014 BZR 4027)-stable date = za 02 mei 2015 20:41:40 CEST
 
 BeginCmp
 TimeStamp = /553C548A;
@@ -883,6 +883,13 @@ IdModule  = SM0603;
 EndCmp
 
 BeginCmp
+TimeStamp = /5539CD44/55453699;
+Reference = C1507;
+ValeurCmp = 100N;
+IdModule  = SM0603;
+EndCmp
+
+BeginCmp
 TimeStamp = /553BB701;
 Reference = CON101;
 ValeurCmp = USB-MINI-B;
@@ -1132,6 +1139,13 @@ TimeStamp = /5539CD44/553A770F;
 Reference = P1507;
 ValeurCmp = AUX;
 IdModule  = bornier2;
+EndCmp
+
+BeginCmp
+TimeStamp = /5539CD44/55453684;
+Reference = P1508;
+ValeurCmp = END_L;
+IdModule  = SIL-2;
 EndCmp
 
 BeginCmp
@@ -2005,6 +2019,13 @@ EndCmp
 BeginCmp
 TimeStamp = /5539CD44/553A76D8;
 Reference = R1506;
+ValeurCmp = 1K;
+IdModule  = SM0603;
+EndCmp
+
+BeginCmp
+TimeStamp = /5539CD44/55453693;
+Reference = R1507;
 ValeurCmp = 1K;
 IdModule  = SM0603;
 EndCmp
