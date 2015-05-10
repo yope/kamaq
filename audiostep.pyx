@@ -78,11 +78,13 @@ cdef class audiostep:
 		self.c_set_destination(self.pos)
 
 	cdef void c_set_destination(self, double *pos):
+		cdef int i
+		cdef int inp
 		self.current = get_position()
-		#for i, sw in enumerate(self.esw):
-			#inp = sw.read_value()
-			#if not inp and self.current[i] > pos[i] * self.invert[i]:
-			#	pos[i] = self.current[i]
+		for i, sw in enumerate(self.esw):
+			inp = sw.read_value()
+			if not inp and self.current[i] > pos[i] * self.invert[i]:
+				pos[i] = self.current[i]
 		# print "AUDIOSTEP: c_set_destination:", pos[0], pos[1], pos[2], pos[3]
 		set_destination(pos)
 
