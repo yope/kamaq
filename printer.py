@@ -287,9 +287,7 @@ class Printer(object):
 					yield from asyncio.sleep(0)
 				else:
 					self.ev_buffer.clear()
-					# print("PRINTER: Wait cond")
 					yield from self.ev_buffer.wait()
-					# print("PRINTER: cond ready")
 					self.move.process_command(obj)
 				idle = False
 				self.set_idle(False)
