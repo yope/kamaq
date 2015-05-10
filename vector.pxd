@@ -18,6 +18,7 @@ cdef class CmdBuffer:
 
 	cdef void reset(self)
 	cdef int size(self)
+	cdef int space(self)
 	cdef int full(self)
 	cdef int push(self, int cmd, double *pos)
 	cdef int pop(self, int *cmd, double *pos)
@@ -41,6 +42,7 @@ cdef class Interpolator:
 	cdef void _sub(self, double *vec1, double *vec2, double *res)
 	cdef void _norm(self, double *vec, double *res)
 	cdef double _dot(self, double *vec1, double *vec2)
+	cdef int buffer_ready(self)
 	cdef void process_one(self, int cmd, double *pos)
 	cdef int pending(self)
 	cdef void process_output(self, int *cmd, double *pos, int *more)

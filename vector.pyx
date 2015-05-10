@@ -26,6 +26,9 @@ cdef class CmdBuffer:
 			d += 32
 		return d
 
+	cdef int space(self):
+		return (self.max_idx - self.size() - 1)
+
 	cdef int full(self):
 		if (self.fill_idx + 1) & 31 == self.empty_idx:
 			return 1
@@ -35,6 +38,7 @@ cdef class CmdBuffer:
 		cdef int i
 		# print "BUFFER: push", cmd
 		if self.full():
+			print "BUFFER: push: FULL! cmd =", cmd, "space =", self.space()
 			return 1
 		self.cmd[self.fill_idx] = cmd
 		for i in range(4):
@@ -45,7 +49,7 @@ cdef class CmdBuffer:
 	cdef int pop(self, int *cmd, double *pos):
 		cdef int i
 		if self.empty_idx == self.fill_idx:
-			# print "BUFFER: pop: EMPTY!"
+			print "BUFFER: pop: EMPTY!"
 			return 1
 		cmd[0] = self.cmd[self.empty_idx]
 		for i in range(4):
@@ -122,7 +126,15 @@ cdef class Interpolator:
 			ret += vec1[i] * vec2[i]
 		return ret
 
+	cdef int buffer_ready(self):
+		if self.outq.space() >= 2: # At lease one feedrate and one pos command
+			return 1
+		return 0
+
 	cdef void process_one(self, int cmd, double *pos):
+		cdef int s = self.outq.space()
+		if s <= 2:
+			print "INTER: Warning, not enough space in buffer! space =", s
 		if cmd == NOP:
 			return
 		if cmd == FEEDRATE:

@@ -137,7 +137,12 @@ cdef class Move(object):
 		return self.output_buffer
 
 	def buffer_ready(self):
-		return not self.output_buffer.full()
+		ret = True
+		if self.output_buffer.space() <= 2:
+			ret = False
+		if not self.inter.buffer_ready():
+			ret = False
+		return ret
 
 	def process_command(self, obj):
 		cdef int i
