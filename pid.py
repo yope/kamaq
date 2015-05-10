@@ -54,6 +54,9 @@ class PidController(object):
 							args=(self, self.cmdqueue))
 		self.spawned = False
 		self.validate_previous = None
+		self.sample_time = time.monotonic() + 0.2
+		self.sample_count = 0
+		self.sample_acc = 0
 
 	def reset_pid(self):
 		self.integ = 0.0
@@ -68,11 +71,11 @@ class PidController(object):
 	def validate_sensor(self, current):
 		if current < 10.0:
 			print("Temperature too low!")
-			self.failure_timestamp = time.time()
+			self.failure_timestamp = time.monotonic()
 			return None
 		if current > 300.0:
 			print("Temperature too high!")
-			self.failure_timestamp = time.time()
+			self.failure_timestamp = time.monotonic()
 			return None
 		prev = self.validate_previous
 		if prev is None:
@@ -80,26 +83,61 @@ class PidController(object):
 			return current
 		if abs(prev - current) > 20.0:
 			print("Temperature sensor unstable!")
-			self.failure_timestamp = time.time()
+			self.failure_timestamp = time.monotonic()
 			self.validate_previous = current
 			return None
 		self.validate_previous = current
 		return current
 
-	def iteration(self):
+	def _get_tts(self):
+		tts = self.sample_time - time.monotonic()
+		return max(0, tts)
+
+	def _set_tts(self):
+		tts = self.sample_time + 0.2
+		if tts < time.monotonic():
+			tts = time.monotonic() + 0.2
+		self.sample_time = tts
+
+	def _filter_sample(self):
 		current = self.sensor.read()
-		self.invalue.value = current
 		current = self.validate_sensor(current)
 		if current is None:
 			print("Temperature sensor failure detected. Shutting down heater!")
 			self.actuator.set_output(0)
 			self.outvalue.value = 0
 			time.sleep(2)
-			return True
-		setpoint = self.setvalue.value
-		if (time.time() - self.failure_timestamp) < 10 or not setpoint:
+			return
+		self.sample_acc += current
+		self.sample_count += 1
+
+	def sample(self, sec):
+		while True:
+			self._filter_sample()
+			tts = self._get_tts()
+			if tts >= sec:
+				break
+			time.sleep(tts)
+			sec -= tts
+			self._set_tts()
+		time.sleep(sec)
+
+	def iteration(self):
+		if self.sample_count <= 0:
+			print("PID: Error. Did not read any valid samples...")
 			self.actuator.set_output(0)
-			time.sleep(1)
+			self.outvalue.value = 0
+			self.sample(1)
+			return True
+		current = self.sample_acc / self.sample_count
+		self.sample_acc = 0
+		self.sample_count = 0
+		self.invalue.value = current
+		setpoint = self.setvalue.value
+		if (time.monotonic() - self.failure_timestamp) < 10 or not setpoint:
+			self.actuator.set_output(0)
+			self.outvalue.value = 0
+			self.sample(1)
 			return True
 		if self.failure_timestamp:
 			print("Temperature sensor back to normal. Resuming heater.")
@@ -124,10 +162,10 @@ class PidController(object):
 		ontime = self.output * self.period
 		if ontime > 0.0:
 			self.actuator.set_output(1)
-		time.sleep(ontime)
+		self.sample(ontime)
 		if ontime < self.period:
 			self.actuator.set_output(0)
-			time.sleep(self.period - ontime)
+			self.sample(self.period - ontime)
 		self.outvalue.value = self.output
 		return True
 
