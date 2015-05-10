@@ -182,7 +182,7 @@ cdef class Move(object):
 				axes = range(3)
 			else:
 				axes.sort()
-			self.do_homing(axes)
+			self.push_homing(axes)
 		elif cmd == "setpoint":
 			pass
 		elif cmd == "set_position":
