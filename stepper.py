@@ -23,7 +23,7 @@ class StepperCluster(object):
 			self.audio.set_amplitude_dc(0.3)
 		self.dim = dim
 		self.set_speed_scale(1.0)
-		self.max_feedrate = cfg.settings["max_feedrate"] / 60.0
+		self.set_max_feedrate(cfg.settings["max_feedrate"] / 60.0)
 
 	def connect_cmd_buffer(self, buf):
 		self.audio.connect_cmd_buffer(buf)
