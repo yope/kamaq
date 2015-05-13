@@ -243,12 +243,22 @@ class Printer(object):
 		return ret
 
 	@asyncio.coroutine
+	def _queue_move(self, obj):
+		if self.move.buffer_ready():
+			self.move.process_command(obj)
+			yield from asyncio.sleep(0)
+		else:
+			self.ev_buffer.clear()
+			yield from self.ev_buffer.wait()
+			self.move.process_command(obj)
+
+	@asyncio.coroutine
 	def gcode_processor(self):
 		idle = True
 		while True:
 			if (self.gcode_file is None or self.pause) and self.gcode_queue.empty():
 				if not idle:
-					self.move.process_command({"command":"eof"})
+					yield from self._queue_move({"command":"eof"})
 					idle = True
 				yield from asyncio.sleep(0.2)
 				continue
@@ -262,13 +272,13 @@ class Printer(object):
 					if self.heater_disable_eof:
 						self.set_setpoint("ext", 0)
 						self.set_setpoint("bed", 0)
-					self.move.process_command({"command":"eof"})
+					yield from self._queue_move({"command":"eof"})
 					self.move.reset()
 					continue
 			else:
 				l = self._read_gcode()
 			if len(l) == 0: # File reader stalled
-				self.move.process_command({"command":"eof"})
+				yield from self._queue_move({"command":"eof"})
 				self.move.reset()
 				continue
 			obj = self.gcode.process_line(l)
@@ -282,13 +292,7 @@ class Printer(object):
 			elif cmd == "log":
 				self.webui.queue_log(obj['type'], obj['value'])
 			else:
-				if self.move.buffer_ready():
-					self.move.process_command(obj)
-					yield from asyncio.sleep(0)
-				else:
-					self.ev_buffer.clear()
-					yield from self.ev_buffer.wait()
-					self.move.process_command(obj)
+				yield from self._queue_move(obj)
 				idle = False
 				self.set_idle(False)
 
