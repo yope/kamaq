@@ -14,6 +14,7 @@ import asyncio
 import os
 import selectors
 import time
+import sys
 
 GPIO_PATH = "gpios"
 
@@ -82,6 +83,43 @@ class GPOutput(GPIOBase):
 
 	def set_output(self, val):
 		self._write_sys(self.gpiovalue, int(val))
+
+class dummy_AsyncGPInput:
+	def __init__(self, name, callback, edge="falling", debounce=0.01):
+		self.name = name
+
+	def gpio_open(self, name):
+		pass
+
+	def gpio_close(self):
+		pass
+
+	def enable_exceptions(self):
+		pass
+
+	def disable_exceptions(self):
+		pass
+
+	def read_value(self):
+		return 1
+
+	def handle_expt(self):
+		pass
+
+class dummy_GPOutput:
+	def __init__(self, name, initial="low"):
+		self.name = name
+
+	def config_output(self, initial):
+		pass
+
+	def set_output(self, val):
+		#print("Set output", repr(self.name), "to:", repr(val))
+		pass
+
+if "--nogpio" in sys.argv:
+	AsyncGPInput = dummy_AsyncGPInput
+	GPOutput = dummy_GPOutput
 
 # Test function
 if __name__ == "__main__":

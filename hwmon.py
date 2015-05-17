@@ -10,6 +10,7 @@
 # of the License, or (at your option) any later version.
 
 import os
+import sys
 
 HWMON_SYSFS_PATH = "/sys/class/hwmon/"
 
@@ -18,7 +19,7 @@ class HWmonSensor(object):
 		self.hwmonpath = os.path.join(os.path.join(HWMON_SYSFS_PATH,
 				cfg.settings["hwmon_device"]), "device")
 		self.hwmonname = os.path.join(self.hwmonpath, name)
-		if not os.path.exists(self.hwmonname):
+		if "--nosensor" in sys.argv:
 			self.read = self.dummy_read
 
 	def dummy_read(self):
