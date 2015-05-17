@@ -52,6 +52,8 @@ cdef class audiostep:
 		pcmname = "surround71:CARD=" + name + ",DEV=0"
 		bname = pcmname.encode("iso8859-1")
 		ret = audiostep_open(bname, channels, 48000)
+		if ret < 0:
+			raise IOError
 		self.max_feedrate = 0.0
 		self.speed_scale = 1.0
 		self.esw = esw
