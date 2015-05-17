@@ -84,7 +84,8 @@ class GCode(object):
 					self.pos[a] = args[a]
 				elif len(args) == 0:
 					self.pos[a] = 0
-			ret = {}.update(self.pos)
+			ret = {}
+			ret.update(self.pos)
 			ret["command"] = "set_position"
 			return ret
 		else:

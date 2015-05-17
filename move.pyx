@@ -192,14 +192,14 @@ cdef class Move(object):
 			pass
 		elif cmd == "set_position":
 			for i in range(self.dim):
-				pos[i] = 0.0
+				pos[i] = self.last_pos[i]
 			for w in obj:
 				idx = self.motor_name_indexes.get(w, None)
 				if idx is not None:
 					pos[idx] = obj[w]
-			self.printer.set_position_mm(*<list>pos)
+			self.printer.set_position_mm(pos[0], pos[1], pos[2], pos[3])
 			self.transform(pos, p)
-			self.inter.process_one(vector.SET_POSITION, pos)
+			self.inter.process_one(vector.SET_POSITION, p)
 		elif cmd == "eof":
 			self.inter.process_one(vector.EOF, pos)
 
