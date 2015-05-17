@@ -20,16 +20,34 @@ class Kamaq(object):
 	def __init__(self, argv):
 		self.sc = None
 		self.cfg = Config("kamaq.conf")
-		self.run_webui()
+		args = sys.argv[1:]
+		port = 80
+		while True:
+			try:
+				a = args.pop(0)
+			except IndexError:
+				break
+			if a == "--nogpio":
+				pass
+			elif a == "--nosensor":
+				pass
+			elif a == "-p":
+				port = int(args.pop(0))
+			else:
+				print("Unknown command-line option:", repr(a))
+				sys.exit(1)
+		self.run_webui(port)
 
 	def shutdown(self):
+		print("Shutting down printer...")
 		self.printer.shutdown()
+		print("Exiting...")
 		sys.exit(0)
 
-	def run_webui(self):
+	def run_webui(self, port=80):
 		signal.signal(signal.SIGINT, self.signal_handler)
 		self.printer = Printer(self.cfg)
-		self.webui = WebUi(self.printer)
+		self.webui = WebUi(self.printer, port)
 		self.printer.add_webui(self.webui)
 		self.printer.run()
 

@@ -119,13 +119,13 @@ class WsHanlder(object):
 		self.webui.del_websocket(self)
 
 class WebUi(object):
-	def __init__(self, printer):
+	def __init__(self, printer, port=80):
 		print("Starting web server...")
 		self.printer = printer
 		self.httpd = web.Application()
 		self.httpd.router.add_static('/', './html/')
 		self.loop = asyncio.get_event_loop()
-		f = self.loop.create_server(self.httpd.make_handler(), '0.0.0.0', 80)
+		f = self.loop.create_server(self.httpd.make_handler(), '0.0.0.0', port)
 		self.server = self.loop.run_until_complete(f)
 		self.wsockets = []
 		start = websockets.serve(self.websocket_handler, '0.0.0.0', 9999)
