@@ -169,7 +169,6 @@ int audiostep_open(const char *devname, int channels, unsigned int rate)
 	if ((err = snd_pcm_prepare (playback_handle)) < 0) {
 		fprintf(stderr, "cannot prepare audio interface for use (%s)\n", snd_strerror (err));
 		goto out_free;
-		exit(1);
 	}
 
 	vec_clear(position);
@@ -288,6 +287,7 @@ static int write_current_reps(double *c, int reps)
 			err = write_pcm_data();
 			if (err != PERIODSIZE) {
 				fprintf(stderr, "write to audio interface failed (%s)\n", snd_strerror (err));
+				return err;
 			} else {
 				ret += err;
 				buf_idx -= (PERIODSIZE * dim * 2);
