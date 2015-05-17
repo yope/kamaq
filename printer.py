@@ -86,8 +86,6 @@ class Printer(object):
 		self.gcode = GCode(self.cfg)
 		dim = self.cfg.settings["num_motors"]
 		audiodev = self.cfg.settings["sound_device"]
-		self.sc = StepperCluster(audiodev, dim, self.cfg, self.esw)
-		self.sc.connect_cmd_buffer(self.move.get_output_buffer())
 		self.current_e = 0
 		self.extruder_safety_timeout = 300 # FIXME
 		self.extruder_safety_time = time.time() + self.extruder_safety_timeout
@@ -99,6 +97,8 @@ class Printer(object):
 			self.pid[n] = PidController(t, o, 0.3, 0.004, 0.5)
 			self.launch_pid(n, 20)
 		self.loop = asyncio.get_event_loop()
+		self.sc = StepperCluster(audiodev, dim, self.cfg, self.esw)
+		self.sc.connect_cmd_buffer(self.move.get_output_buffer())
 		self.loop.add_writer(self.sc.fileno(), self.handle_sc_write)
 		asyncio.async(self.gcode_processor())
 		asyncio.async(self.coro_check_machine())
@@ -111,6 +111,7 @@ class Printer(object):
 		self.set_setpoint(name, sp)
 
 	def shutdown(self):
+		self.loop.stop()
 		for name in self.pid:
 			self.pid[name].set_setpoint(0)
 			self.pid[name].shutdown()
