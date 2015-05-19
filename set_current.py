@@ -20,7 +20,7 @@ if len(sys.argv) > 1:
 	for i in range(len(sys.argv) - 1):
 		vec[i] = float(sys.argv[i + 1])
 audiodev = cfg.settings["sound_device"]
-audio = audiostep(audiodev, dim)
+audio = audiostep(cfg, audiodev, dim, None)
 while True:
 	audio.set_constant_current(vec)
 audio.zero_output()
