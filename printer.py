@@ -139,13 +139,17 @@ class Printer(object):
 	def get_temperature(self, name):
 		return self.pid[name].get_input()
 
-	def check_setpoint(self, name):
+	def check_setpoint_immediate(self, name):
 		temp = self.get_temperature(name)
 		sp = self.setpoint[name]
 		dt = abs(temp - sp)
 		if sp < 30: # Heater off = ok
 			dt = 0
 		ok = (dt < self.tolerance)
+		return ok
+
+	def check_setpoint(self, name):
+		ok = self.check_setpoint_immediate(name)
 		if ok:
 			self.setpoint_fail_time[name] = 0
 		elif not self.setpoint_fail_time[name]:
@@ -198,6 +202,13 @@ class Printer(object):
 		return True
 
 	@asyncio.coroutine
+	def wait_for_setpoints(self):
+		while True:
+			if self.check_setpoint_immediate("ext") and self.check_setpoint_immediate("bed"):
+				break
+			yield from asyncio.sleep(2)
+
+	@asyncio.coroutine
 	def start_auto(self, sp_ext, en_ext, sp_bed, en_bed, fname):
 		if self.gcode_file is not None:
 			return False
@@ -220,10 +231,7 @@ class Printer(object):
 		# Temperatures high enough to start homing
 		self.reset()
 		yield from self.execute_gcode("G28 X0 Y0")
-		while True:
-			if self._heater_status("bed") == "ok" and self._heater_status("ext") == "ok":
-				break
-			yield from asyncio.sleep(2)
+		yield from self.wait_for_setpoints()
 		yield from self.execute_gcode("G28 Z0")
 		yield from self.print_file(fname)
 
@@ -290,6 +298,8 @@ class Printer(object):
 			if cmd == "setpoint":
 				if self.heater_enable_mcodes:
 					self.set_setpoint(obj["type"], obj["value"])
+					if obj["wait"]:
+						yield from self.wait_for_setpoints()
 			elif cmd == "log":
 				self.webui.queue_log(obj['type'], obj['value'])
 			else:

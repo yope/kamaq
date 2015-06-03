@@ -39,9 +39,20 @@ class GCode(object):
 			pass
 		elif code == 104: # Set hotend temperature
 			val = float(args['S'])
-			return {"command": "setpoint", "type": "ext", "value": val}
+			return {"command": "setpoint", "type": "ext", "value": val, "wait": False}
 		elif code == 106: # Set extruder fan speed
 			print("Set extruder fan speed:", args.get("S", 0))
+		elif code == 109: # Set temperature and wait
+			val = float(args['S'])
+			return {"command": "setpoint", "type": "ext", "value": val, "wait": True}
+		elif code == 116: # Wait for setpoints
+			return {"command": "wait"}
+		elif code == 140: # Set heated bed temperature
+			val = float(args['S'])
+			return {"command": "setpoint", "type": "bed", "value": val, "wait": False}
+		elif code == 190: # Set heated bed temperature and wait
+			val = float(args['S'])
+			return {"command": "setpoint", "type": "bed", "value": val, "wait": True}
 		else:
 			print("Unimplemented M: code =", code, repr(args))
 		return None
