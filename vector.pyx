@@ -81,7 +81,7 @@ cdef class CmdBuffer:
 
 cdef class Interpolator:
 	def __init__(self):
-		self.max_begin = 12.0 # FIXME
+		self.max_begin = 8.0 # FIXME
 		self.feedrate0 = -1.0
 		self.start = 0.0
 		self.high = 0.0
