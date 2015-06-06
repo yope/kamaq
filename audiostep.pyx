@@ -165,6 +165,15 @@ cdef class audiostep:
 	def stop(self):
 		stop_audio()
 
+	def flush_queue(self):
+		cdef int ret = 0
+		cdef int cmd[1]
+		cdef double pos[4]
+		while True:
+			ret = self.cmdbuf.pop(cmd, pos)
+			if ret != 0:
+				break
+
 	def restart(self):
 		restart_audio()
 

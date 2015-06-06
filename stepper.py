@@ -31,6 +31,9 @@ class StepperCluster(object):
 	def pull_cmd_buffer(self):
 		return self.audio.pull_cmd_buffer()
 
+	def flush_queue(self):
+		self.audio.flush_queue()
+
 	def set_speed_scale(self, ss):
 		self.speed_scale = ss
 		self.audio.set_speed_scale(ss)

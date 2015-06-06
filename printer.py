@@ -360,21 +360,26 @@ class Printer(object):
 	@asyncio.coroutine
 	def stop(self):
 		print("Stopping...")
+		self.abort()
+		yield from self.execute_gcode("G91")
+		yield from self.execute_gcode("G1 Z5 F5000")
+		yield from self.execute_gcode("G90")
+
+	def abort(self):
+		print("Aborting...")
 		if self.gcode_file:
 			self.gcode_file.close()
 			self.gcode_file = None
 		while not self.gcode_queue.empty():
 			self.gcode_queue.get_nowait()
 		self.sc.cancel_destination()
+		self.sc.flush_queue()
 		# We may have interrupted a move. Make sure we know where we are...
 		scpos = self.sc.get_position()
 		gpos = self.move.reverse_transform(scpos)
 		self.gcode.set_position(gpos)
 		self.set_setpoint("ext", 0)
 		self.set_setpoint("bed", 0)
-		yield from self.execute_gcode("G91")
-		yield from self.execute_gcode("G1 Z5 F5000")
-		yield from self.execute_gcode("G90")
 
 	def reset(self):
 		self.gcode.reset()

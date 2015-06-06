@@ -113,6 +113,8 @@ class WsHanlder(object):
 			p.set_heater_enable_mcodes(obj["enable_mcodes"])
 			p.set_heater_disable_eof(obj["disable_at_eof"])
 			yield from p.start_auto(t_ext, en_ext, t_bed, en_bed, os.path.join("data", obj["filename"]))
+		elif cmd == "abort":
+			p.abort()
 
 	def on_disconnect(self):
 		print("WS: disconnect")
