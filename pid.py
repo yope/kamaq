@@ -91,7 +91,7 @@ class PidController(object):
 
 	def _get_tts(self):
 		tts = self.sample_time - time.monotonic()
-		return max(0, tts)
+		return tts
 
 	def _set_tts(self):
 		tts = self.sample_time + 0.2
@@ -117,10 +117,14 @@ class PidController(object):
 			tts = self._get_tts()
 			if tts >= sec:
 				break
-			time.sleep(tts)
+			if tts >= 0.0:
+				time.sleep(tts)
+			else:
+				break
 			sec -= tts
 			self._set_tts()
-		time.sleep(sec)
+		if sec > 0.0:
+			time.sleep(sec)
 
 	def iteration(self):
 		if self.sample_count <= 0:
