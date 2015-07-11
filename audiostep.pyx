@@ -153,8 +153,18 @@ cdef class audiostep:
 			self.c_set_destination(pos)
 		elif cmd == vector.SET_POSITION:
 			set_position(pos)
+		elif cmd == vector.ENDSTOP:
+			self.set_endstop(pos)
 		else:
 			print "AUDIOSTEP: Unknown command id:", cmd
+
+	cdef void set_endstop(self, double *pos):
+		cdef int i
+		for sw in self.esw:
+			if pos[0] > 0.0:
+				sw.enable_exceptions()
+			else:
+				sw.disable_exceptions()
 
 	def process_one_move(self):
 		process_one_move()

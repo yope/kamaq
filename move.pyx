@@ -153,6 +153,7 @@ cdef class Move(object):
 		cdef double frb[4]
 		cdef int icmd[1]
 		cdef int imore[1]
+		cdef int enable
 		cmd = obj["command"]
 		# print "MOVE: process command:", repr(obj)
 		if cmd == "position":
@@ -202,6 +203,10 @@ cdef class Move(object):
 			self.inter.process_one(vector.SET_POSITION, p)
 		elif cmd == "eof":
 			self.inter.process_one(vector.EOF, pos)
+		elif cmd == "endstop":
+			enable = int(obj["enable"])
+			pos[0] = <double>enable
+			self.inter.process_one(vector.ENDSTOP, pos)
 
 		while True:
 			self.inter.process_output(icmd, pos, imore)

@@ -50,6 +50,7 @@ cdef class Interpolator:
 	cdef void queue_position(self, double *pos)
 	cdef void queue_set_position(self, double *pos)
 	cdef void queue_eof(self)
+	cdef void queue_endstop(self, double *pos)
 
 cdef enum:
 	NOP,
@@ -57,4 +58,5 @@ cdef enum:
 	FEEDRATE3,
 	POSITION,
 	SET_POSITION,
+	ENDSTOP,
 	EOF

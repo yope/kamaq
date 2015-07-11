@@ -47,6 +47,10 @@ class GCode(object):
 			return {"command": "setpoint", "type": "ext", "value": val, "wait": True}
 		elif code == 116: # Wait for setpoints
 			return {"command": "wait"}
+		elif code == 120: # Enable endstop
+			return {"command": "endstop", "enable": True}
+		elif code == 121: # Disable endstop
+			return {"command": "endstop", "enable": False}
 		elif code == 140: # Set heated bed temperature
 			val = float(args['S'])
 			return {"command": "setpoint", "type": "bed", "value": val, "wait": False}

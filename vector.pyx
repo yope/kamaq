@@ -143,6 +143,8 @@ cdef class Interpolator:
 			self.queue_position(pos)
 		elif cmd == SET_POSITION:
 			self.queue_set_position(pos)
+		elif cmd == ENDSTOP:
+			self.queue_endstop(pos)
 		elif cmd == EOF:
 			print "vector: EOF"
 			self.queue_eof()
@@ -226,6 +228,11 @@ cdef class Interpolator:
 		self.queue_eof()
 		self.reset()
 		self.outq.push(SET_POSITION, pos)
+
+	cdef void queue_endstop(self, double *pos):
+		self.queue_eof()
+		self.reset()
+		self.outq.push(ENDSTOP, pos)
 
 	cdef void queue_eof(self):
 		cdef int i
