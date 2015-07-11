@@ -26,8 +26,14 @@ class HWmonSensor(object):
 		return 0.1
 
 	def read(self):
-		f = open(self.hwmonname, "r")
-		txt = f.read().strip(" \r\n")
+		try:
+			f = open(self.hwmonname, "r")
+		except (FileNotFoundError, OSError):
+			return 0.0
+		try:
+			txt = f.read().strip(" \r\n")
+		except OSError:
+			return 0.0
 		f.close()
 		return float(txt) / 1000.0
 
