@@ -22,6 +22,7 @@ from aiohttp import web
 import websockets
 import json
 from collections import deque
+from time import monotonic
 
 import random
 random.seed()
@@ -123,6 +124,9 @@ class WsHanlder(object):
 class WebUi(object):
 	def __init__(self, printer, port=80):
 		print("Starting web server...")
+		self.layer0ts = 0
+		self.lastts = 0
+		self.maxlayer = 0
 		self.printer = printer
 		self.httpd = web.Application()
 		self.httpd.router.add_static('/', './html/')
@@ -174,6 +178,21 @@ class WebUi(object):
 			t_bed = random.randrange(20, 50)
 			self.queue({"id": "temperature", "extruder": t_ext, "bed": t_bed})
 
+	@asyncio.coroutine
+	def coro_timer(self):
+		ts0 = monotonic()
+		while True:
+			if self.layer0ts:
+				yield from asyncio.sleep(0.2)
+				ts = monotonic()
+				if ts0 != ts:
+					dt = ts - self.layer0ts
+					stime = "%02d:%02d:%02d" % (dt // 3600, (dt // 60) % 60, dt % 60)
+					ts0 = ts
+					self.queue_log("time", stime)
+			else:
+				yield from asyncio.sleep(1)
+
 	def add_websocket(self, wsock):
 		print("add_websocket")
 		self.wsockets.append(wsock)
@@ -205,6 +224,20 @@ class WebUi(object):
 	def queue_log(self, typ, value):
 		obj = {"id": "log", "type": typ, "value": value}
 		self.queue(obj)
+		if typ == "layer_count":
+			self.maxlayer = value
+		elif typ == "layer" and value == 0:
+			self.layer0ts = monotonic()
+		elif typ == "layer" and self.maxlayer and self.layer0ts:
+			if not self.lastts:
+				self.lastts = self.layer0ts
+			ts = monotonic()
+			dt = ts - self.lastts
+			n = self.maxlayer - value
+			eta = n * dt
+			seta = "%dh %02dm" % (eta // 3600, (eta // 60) % 60)
+			self.queue_log("eta", seta)
+			self.lastts = ts
 
 	def queue_setpoint(self, name, sp):
 		obj = {"id": "setpoint", "type": name, "value": sp}
