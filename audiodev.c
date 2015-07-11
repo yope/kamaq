@@ -37,8 +37,8 @@ static double tim;
 static double dist;
 static double delta_t;
 static double feedrate = 0.33;
-static double feedrate_begin = 0.03;
-static double feedrate_end = 0.03;
+static double feedrate_begin = 0.04;
+static double feedrate_end = 0.04;
 static double amplitude_dc = AMPLITUDE_DC_DEFAULT;
 
 double sintab[STEP_PERIOD_SIZE], costab[STEP_PERIOD_SIZE];
@@ -240,7 +240,7 @@ void next_position(int *steps)
 
 void pos_iteration(int *steps)
 {
-	double dtinc = 0.0003;
+	double dtinc = 0.0004;
 	double dt;
 
 	next_position(steps);
