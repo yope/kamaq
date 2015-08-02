@@ -77,8 +77,8 @@ class Printer(object):
 		self.setpoint_fail_time = {}
 		self.tolerance = 3
 		self.current_status = None
-		self.heater_enable_mcodes = False
-		self.heater_disable_eof = False
+		self.heater_enable_mcodes = True
+		self.heater_disable_eof = True
 		self.ignore_endstop = False
 		self.prepare_endswitches()
 		self.machine_ready = False
