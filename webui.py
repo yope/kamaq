@@ -30,6 +30,7 @@ random.seed()
 class WsHanlder(object):
 	def __init__(self, websock, webui):
 		self.webui = webui
+		self.fullui = False
 		self.ws_acked = True
 		self.ws_queue = []
 		self.websock = websock
@@ -84,7 +85,9 @@ class WsHanlder(object):
 		print("WS: received:", repr(obj))
 		p = self.webui.printer
 		cmd = obj.get("command", None)
-		if cmd == "runfile":
+		if cmd == "hello":
+			self.fullui = True
+		elif cmd == "runfile":
 			yield from p.print_file(os.path.join("data", obj["filename"]))
 		elif cmd == "gcode":
 			yield from p.execute_gcode(obj["code"])
@@ -213,8 +216,13 @@ class WebUi(object):
 		for ws in self.wsockets:
 			ws.queue_message(obj)
 
+	def queue_fullui(self, obj):
+		for ws in self.wsockets:
+			if ws.fullui:
+				ws.queue_message(obj)
+
 	def queue_move(self, x, y, z, e):
-		self.queue({"id": "move", "x": x, "y": y, "z": z, "e": e})
+		self.queue_fullui({"id": "move", "x": x, "y": y, "z": z, "e": e})
 
 	def queue_status(self, motors, extruder, bed):
 		obj = {"id": "status", "motors": motors, "extruder": extruder, "bed": bed}

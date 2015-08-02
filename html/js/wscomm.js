@@ -4,6 +4,7 @@
 
 var ws_conn;
 var ws_initialized = false;
+var ws_fullui = false;
 
 var startTime = (new Date()).getTime();
 function log(s)
@@ -14,10 +15,17 @@ function log(s)
 
 function WSParseTemp(obj)
 {
-	add_plot_data(plotdata_t_ext, obj.extruder);
-	add_plot_data(plotdata_t_bed, obj.bed);
-	draw_plot("canvas_t_ext", plotdata_t_ext);
-	draw_plot("canvas_t_bed", plotdata_t_bed);
+	if (ws_fullui) {
+		add_plot_data(plotdata_t_ext, obj.extruder);
+		add_plot_data(plotdata_t_bed, obj.bed);
+		draw_plot("canvas_t_ext", plotdata_t_ext);
+		draw_plot("canvas_t_bed", plotdata_t_bed);
+	} else {
+		var t_ext = String(Math.round(obj.extruder * 10) / 10) + "\u00b0C"
+		var t_bed = String(Math.round(obj.bed * 10) / 10) + "\u00b0C"
+		document.getElementById("div_temp_ext").innerHTML = t_ext;
+		document.getElementById("div_temp_bed").innerHTML = t_bed;
+	}
 }
 
 function WSParseMove(obj)
@@ -131,12 +139,16 @@ function WSHandler(txt)
 	}
 }
 
-function WSInit()
+function WSInit(full)
 {
 	ws_conn = new WebSocket("ws://"+window.location.hostname+":9999/");
 	ws_conn.onopen = function () {
+		ws_fullui = full;
 		ws_initialized = true;
-		WSSendObject(new WSCommand("hello"));
+		if (full)
+			WSSendObject(new WSCommand("hello"));
+		else
+			WSSendObject(new WSCommand("hi"));
 	}
 	ws_conn.onmessage = WSHandler;
 }

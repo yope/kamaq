@@ -1,0 +1,147 @@
+<html>
+<!-- vim: set tabstop=4:shiftwidth=4 -->
+<head>
+	<title>Kamaq printer control</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<script src="/js/wscomm.js"></script>
+	<script src="/js/ui.js"></script>
+<script>
+window.onload = function() {
+	// UIInit();
+	WSInit(false);
+};
+</script>
+<style>
+.maindiv {
+	position: relative;
+	width: 100%;
+    padding: 2px;
+    border: 2px solid #c0c0ff;
+    margin: 2px;
+	float: left;
+	min-height: 380;
+	max-height: 70%;
+}
+
+.table_3col td {
+	width: 33%;
+}
+
+.table_2col td {
+	width: 50%;
+}
+
+h1 {
+	font-size: 1.5em;
+}
+
+.div_title {
+	font-weight: bold;
+}
+
+</style>
+</head>
+<body>
+<h1>Kamaq printer control</h1>
+
+<div id="div_control" class="maindiv">
+	<div id="div_mov_title" class="div_title">
+		Control
+	</div>
+	<table class="table_3col" style="width:100%">
+	<tr>
+		<td>File:</td>
+		<td colspan="2"><input type="text" id="filename_entry"></td>
+	</tr>
+	<tr>
+		<td><button type="button" class="gcodebtn" onclick="btnStart();">Start</button></td>
+		<td><button type="button" onclick="btnPause();" id="pause_button">Pause</button></td>
+		<td><button type="button" onclick="btnStop();">Stop</button></td>
+	</tr>
+	<tr>
+		<td colspan="2">Inihibit extruder:</td>
+		<td><input type="checkbox" id="extruder_check" onchange="checkExtruder();"/></td>
+	</tr>
+	<tr>
+		<td><button type="button" onclick="btnAbort();">Abort</button></td>
+		<td><button type="button" onclick="btnReset();" class="gcodebtn">Reset</button></td>
+	</tr>
+	<tr>
+		<td colspan="2">Ignore endstops:</td>
+		<td><input type="checkbox" id="ign_stop_check" onchange="checkIgnoreStop();"/></td>
+	</tr>
+	<tr>
+		<td><button type="button" class="gcodebtn" onclick="btnHome();">Home (G28)</button>
+		<td><input type="checkbox" id="homex_check"/>home X</td>
+	</tr>
+	<tr>
+		<td><input type="checkbox" id="homey_check"/>home Y</td>
+		<td><input type="checkbox" id="homez_check"/>home Z</td>
+	</tr>
+	<tr>
+		<td colspan="2">Speed scale:</td>
+	</tr>
+	<tr>
+		<td colspan="2"><input style="width: 100%;" type="range" min="0" max="12" id="speedscale_slider"
+				oninput="sliderSpeed();"/></td>
+		<td><input type="text" id="speedscale_entry" size="5" value="1.0"></td>
+	</tr>
+	<tr>
+		<td>T_ext:</td>
+		<td><input type="number" id="heater_ext_entry" size="6" value="245" min="20" max="280" onchange="changeHeater();"></td>
+		<td><input type="checkbox" id="heater_ext_check" onchange="changeHeater();"/>Enable</td>
+	</tr>
+	<tr>
+		<td>T_bed:</td>
+		<td><input type="number" id="heater_bed_entry" size="6" value="100" min="20" max="120" onchange="changeHeater();"></td>
+		<td><input type="checkbox" id="heater_bed_check" onchange="changeHeater();"/>Enable</td>
+	</tr>
+	<tr>
+		<td><div id="div_motor_status">Status:-</div></td>
+		<td><div id="div_ext_status">Hotend:-</div></td>
+		<td><div id="div_bed_status">Bed:-</div></td>
+	</tr>
+	</table>
+</div>
+
+<div id="div_mov_info" class="maindiv">
+	<div id="div_info_title" class="div_title">
+		Status
+	</div>
+	<table style="width:100%" class="table_2col">
+	<tr>
+		<td>Layer:</td>
+		<td><div id="div_log_layer">-</div></td>
+	</tr>
+	<tr>
+		<td>Total:</td>
+		<td><div id="div_log_layer_count">-</div></td>
+	</tr>
+	<tr>
+		<td>Progress:</td>
+		<td><div id="div_progress_perc">-</div></td>
+	</tr>
+	<tr>
+		<td>Part:</td>
+		<td><div id="div_log_part">-</div></td>
+	</tr>
+	<tr>
+		<td>Time:</td>
+		<td><div id="div_log_time">-</div></td>
+	</tr>
+	<tr>
+		<td>ETA:</td>
+		<td><div id="div_log_eta">-</div></td>
+	</tr>
+	<tr>
+		<td>T_ext:</td>
+		<td><div id="div_temp_ext">-</div></td>
+	</tr>
+	<tr>
+		<td>T_bed:</td>
+		<td><div id="div_temp_bed">-</div></td>
+	</tr>
+	</table>
+</div>
+</body>
+</html>
