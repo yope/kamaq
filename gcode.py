@@ -174,7 +174,8 @@ class GCode(object):
 		args = {}
 		for w in words:
 			if w[0] == ";":
-				return self.process_comment(w[1:]) # FIXME: Rest of line?
+				# return self.process_comment(w[1:]) # FIXME: Rest of line?
+				break
 			if w[0] in ["X", "Y", "Z", "E", "F", "S", "P", "R"]:
 				snum = w[1:]
 				try:
