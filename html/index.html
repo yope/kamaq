@@ -58,15 +58,21 @@ window.onload = function() {
 	 width="33%";
 }
 
+h1 {
+	font-size: 1.5em;
+}
+
+.div_title {
+	font-weight: bold;
+}
+
 </style>
 </head>
 <body>
 <h1>Kamaq printer control</h1>
 
-<div id="tabbar"><div id="tab_main">Status</div></div>
-
 <div id="div_control" class="maindiv">
-	<div id="div_mov_title">
+	<div id="div_mov_title" class="div_title">
 		Control
 	</div>
 	<table style="width:100%">
@@ -123,11 +129,11 @@ window.onload = function() {
 	</tr>
 	<tr>
 		<td colspan=3>Process heater commands (M-codes):</td>
-		<td><input type="checkbox" id="mcodes_check" onchange="checkHeaterPolicy();"/></td>
+		<td><input type="checkbox" id="mcodes_check" onchange="checkHeaterPolicy();" checked/></td>
 	</tr>
 	<tr>
 		<td colspan=3>Disable heaters at end of print:</td>
-		<td><input type="checkbox" id="heater_eof_check" onchange="checkHeaterPolicy();"/></td>
+		<td><input type="checkbox" id="heater_eof_check" onchange="checkHeaterPolicy();" checked/></td>
 	</tr>
 	<tr>
 		<td colspan=2>Hotend temperature:</td>
@@ -209,7 +215,7 @@ window.onload = function() {
 </div>
 
 <div id="div_t_ext" class="graphdiv">
-	<div id="div_t_ext_title">
+	<div id="div_t_ext_title" class="div_title">
 		Hotend temperature
 	</div>
 	<div id="div_t_ext_graph">
@@ -218,7 +224,7 @@ window.onload = function() {
 </div>
 
 <div id="div_t_bed" class="graphdiv">
-	<div id="div_t_bed_title">
+	<div id="div_t_bed_title" class="div_title">
 		Print bed temperature
 	</div>
 	<div id="div_t_bed_graph">
