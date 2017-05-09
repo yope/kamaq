@@ -98,8 +98,11 @@ cdef class Move(object):
 		cdef double pos[4]
 		cdef double frb[4]
 		cdef double zerop[4]
+		cdef double enablep[4]
 		for i in range(self.dim):
 			zerop[i] = 0.0
+			enablep[i] = 0.0
+		enablep[0] = 1.0
 		self.inter.process_one(vector.SET_POSITION, zerop)
 		for i in axes:
 			for j in range(self.dim):
@@ -113,8 +116,10 @@ cdef class Move(object):
 			self.transform_feedrate(pos, p)
 			frb[0] = self.feedrate
 			self.inter.process_one(vector.FEEDRATE, frb)
+			self.inter.process_one(vector.ENDSTOP, enablep)
 			self.inter.process_one(vector.POSITION, p)
 			self.inter.process_one(vector.SET_POSITION, zerop)
+			self.inter.process_one(vector.ENDSTOP, zerop)
 			if i < 2:
 				pos[i] = 4
 			else:
@@ -130,8 +135,10 @@ cdef class Move(object):
 			self.transform_feedrate(pos, p)
 			frb[0] = self.feedrate
 			self.inter.process_one(vector.FEEDRATE, frb)
+			self.inter.process_one(vector.ENDSTOP, enablep)
 			self.inter.process_one(vector.POSITION, p)
 			self.inter.process_one(vector.SET_POSITION, zerop)
+			self.inter.process_one(vector.ENDSTOP, zerop)
 
 	def get_output_buffer(self):
 		return self.output_buffer
