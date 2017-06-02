@@ -128,7 +128,7 @@ class GCode(object):
 		elif l.startswith('type:'):
 			cmd['value'] = l.split(':',1)[1]
 			return cmd
-		elif l.startswith('layer count:'):
+		elif l.startswith('layer count:') or l.startswith('layer_count:'):
 			num = l.split(':',1)[1]
 			try:
 				num = int(num)
