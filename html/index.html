@@ -120,6 +120,9 @@ h1 {
 		<td></td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('Z-');">Z -</button></td>
 		<td><button type="button" class="gcodebtn" onclick="btnMove('Y-');">Y -</button></td>
+		<td colspan="3">Z-offset:
+			<input type="number" id="zoffset_entry" size="5" value="0.00" min="-1.00" max="1.00" step="0.01" onchange="changeZoffset();"/>mm
+		</td>
 	</tr>
 	<tr>
 		<td>Speed scale:</td>

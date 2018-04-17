@@ -390,3 +390,12 @@ function changeHeater()
 	cmd.bed_enable = bedon;
 	WSSendObject(cmd);
 }
+
+function changeZoffset()
+{
+	var zoff = Number(document.getElementById("zoffset_entry").value);
+	var cmd = new WSCommand("zoffset");
+
+	cmd.value = zoff;
+	WSSendObject(cmd);
+}

@@ -21,6 +21,7 @@ class GCode(object):
 		self.pos["command"] = "position" # Default position command
 		self.set_zero_extruder(False)
 		self.relative_mode = False
+		self.zoffset = 0.0
 
 	def reset(self):
 		for m in self.motor_name:
@@ -73,6 +74,8 @@ class GCode(object):
 					if self.relative_mode and code in ['X', 'Y', 'Z', 'E']:
 						self.pos[code] += val
 					else:
+						if code == 'Z':
+							val += self.zoffset
 						self.pos[code] = val
 				else:
 					print("G1 unknown code:", code)
@@ -193,3 +196,7 @@ class GCode(object):
 		elif cmd == "T":
 			return self.process_T(code, args)
 		return None
+
+	def set_zoffset(self, zoff):
+		self.pos['Z'] = self.pos['Z'] - self.zoffset + zoff
+		self.zoffset = zoff

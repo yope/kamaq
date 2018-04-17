@@ -119,6 +119,8 @@ class WsHanlder(object):
 			yield from p.start_auto(t_ext, en_ext, t_bed, en_bed, os.path.join("data", obj["filename"]))
 		elif cmd == "abort":
 			p.abort()
+		elif cmd == "zoffset":
+			p.set_zoffset(obj["value"])
 
 	def on_disconnect(self):
 		print("WS: disconnect")

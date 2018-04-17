@@ -136,6 +136,10 @@ class Printer(object):
 		if report and self.webui:
 			self.webui.queue_setpoint(name, sp)
 
+	def set_zoffset(self, zoff):
+		print("PRINTER: Set Z-offset:", zoff)
+		self.gcode.set_zoffset(zoff)
+
 	def get_temperature(self, name):
 		return self.pid[name].get_input()
 
