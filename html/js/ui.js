@@ -75,7 +75,7 @@ function draw_movements(id, data)
 	var canvas = document.getElementById(id);
 	var i, h;
 	var len = data.length;
-	var mag = 2.0;
+	var mag = 5.0;
 	var t0 = 1;
 	var x, y;
 	var greycomp = "0";
@@ -85,12 +85,15 @@ function draw_movements(id, data)
 	if (null==canvas || !canvas.getContext) return;
 
 	/* Set canvas pixel size */
-	if (canvas.width != canvas.clientWidth) {
-		canvas.width = canvas.clientWidth;
+	let cw = canvas.clientWidth * 2.0;
+	let ch = canvas.clientHeight * 2.0;
+
+	if (canvas.width != cw) {
+		canvas.width = cw;
 		redraw = true;
 	}
-	if (canvas.height != canvas.clientHeight) {
-		canvas.height = canvas.clientHeight;
+	if (canvas.height != ch) {
+		canvas.height = ch;
 		redraw = true;
 	}
 	h = canvas.height - 5;
