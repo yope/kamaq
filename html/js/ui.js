@@ -102,7 +102,7 @@ function draw_movements(id, data)
 	}
 	ctx.beginPath();
 	ctx.strokeStyle = "rgb(128, 128, 128)";
-	ctx.rect(5, 5, 185 * mag, 195 * mag);
+	ctx.rect(5, h - 195 * mag, 185 * mag, 195 * mag);
 	ctx.stroke();
 	ctx.beginPath();
 	ctx.strokeStyle = "rgb(" + greycomp +", 128, 255)";
